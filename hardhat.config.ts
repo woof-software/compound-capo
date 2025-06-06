@@ -2,7 +2,7 @@
 
 import { HardhatUserConfig } from "hardhat/config";
 import type { MultiSolcUserConfig } from "hardhat/src/types/config";
-import { TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS } from "hardhat/builtin-tasks/task-names";
+// import { TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS } from "hardhat/builtin-tasks/task-names";
 /* Uncomment if support of TypeScript `paths` mappings is needed.
  * Make sure to run `pnpm add -D "tsconfig-paths@4.2.0"` in this case.
  */
@@ -16,7 +16,7 @@ import "hardhat-tracer";
 import "solidity-docgen"; // The tool by OpenZeppelin to generate documentation for contracts in Markdown.
 import "hardhat-contract-sizer";
 import "hardhat-abi-exporter";
-import "hardhat-exposed";
+// import "hardhat-exposed";
 
 import dotenv from "dotenv";
 dotenv.config();
@@ -64,8 +64,29 @@ const config: HardhatUserConfig = {
                         }
                     }
                 }
+            },
+            {
+                version: '0.8.15',
+                settings: {
+                optimizer: (
+                    {
+                        enabled: true,
+                        runs: 1,
+                        details: {
+                            yulDetails: {
+                            optimizerSteps: 'dhfoDgvulfnTUtnIf [xa[r]scLM cCTUtTOntnfDIul Lcul Vcul [j] Tpeul xa[rul] xa[r]cL gvif CTUca[r]LsTOtfDnca[r]Iulc] jmul[jul] VcTOcul jmul'
+                            },
+                        },
+                    }
+                ),
+                outputSelection: {
+                    '*': {
+                    '*': ['evm.deployedBytecode.sourceMap']
+                    },
+                },
+                viaIR: true,
+                },
             }
-            // { version: "0.7.6" }
         ]
         // overrides: { "contracts/Deployed.sol": { version: "0.8.21" } }
     },
@@ -160,11 +181,11 @@ const config: HardhatUserConfig = {
             spacing: 4
         }
     ],
-    exposed: {
-        imports: true,
-        initializers: true,
-        exclude: ["vendor/**/*"]
-    }
+    // exposed: {
+    //     imports: true,
+    //     initializers: true,
+    //     exclude: ["vendor/**/*"]
+    // }
 };
 
 if (envs.EVM_VERSION !== "default")
