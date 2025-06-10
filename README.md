@@ -1,53 +1,63 @@
-# Solidity base using Hardhat and Foundry
+# CAPO: Correlated-Assets Price Oracle
 
-## Installation
+## Purpose
 
-Prerequisites: install [Node.js](https://nodejs.org/en/download/package-manager) 22.10+ with `pnpm` and [Visual Studio Code](https://code.visualstudio.com/download).
+**CAPO** (Correlated-Assets Price Oracle) is a price oracle adapter designed to support assets that grow gradually relative to a base asset — such as liquid staking tokens (LSTs) that accumulate yield over time. It provides a mechanism to track this expected growth while protecting downstream protocol from sudden or manipulated price spikes.
 
-Open [the root of the project](./) using Visual Studio Code and install all the extensions recommended by notifications of Visual Studio Code, then restart Visual Studio Code.
+The goal of CAPO is to balance two key requirements in decentralized finance (DeFi):
 
-Open the terminal and run the command below to install all the dependencies and prepare the project:
+- **Enable organic growth** of assets over time, reflecting yield and adoption.
+- **Prevent sudden, artificial price increases** that could be exploited in systems relying on price feeds.
 
-```shell
-pnpm i
+---
+
+## High-Level Design
+
+CAPO wraps around two existing data sources:
+
+- A **base price feed** for the underlying asset (e.g., ETH/USD), typically powered by a Chainlink Aggregator.
+- A **ratio feed** that represents the current exchange rate between the derivative asset and the base (e.g., stETH/ETH), often exposed via protocols like ERC-4626 vaults.
+
+CAPO combines these inputs to calculate a live price, with an enforced upper bound based on preconfigured growth parameters.
+
+---
+
+## How CAPO Works
+
+At initialization, CAPO takes a **snapshot** of the exchange rate and timestamp. From this snapshot, it calculates the maximum allowed ratio at any given time using a configurable yearly growth cap (e.g., 8% or 20%).
+
+The capped rate is derived with a linear approximation:
+
+```typescript
+max_rate(t) = snapshot_rate * (1 + max_yearly_growth * elapsed_time / 1 year)
 ```
 
-Run to view commands:
+This mechanism allows the asset’s price to grow steadily while rejecting values that rise faster than expected, which could indicate manipulation, mispricing, or other anomalies.
 
-```shell
-pnpm run
-```
+If the live ratio exceeds the computed cap, CAPO returns the maximum allowed rate instead. This result is then combined with the base asset’s price to produce a final output.
 
-## Some unsorted notes
+---
 
-### Commands
+## Benefits
 
-- `pnpm coverage` shows all coverage and `pnpm test` runs all Hardhat tests.
-- `pnpm testh:vvv test/SomeContract.ts` show details about events, calls, gas costs, etc.
+- **Manipulation Resistance**: CAPO helps prevent price manipulation attacks that could inflate collateral value or affect stablecoin issuance.
+- **Predictable Growth Model**: Allows token issuers and protocol integrators to specify clear expectations for asset appreciation over time.
+- **DeFi Compatibility**: Can be used in any system that consumes price feeds—particularly where conservative valuation is preferable.
 
-### Environment variables
+---
 
-The project can properly work without the \`.env\` file, but supports some variables (see `.env.details` for details). For example:
+## Integration Considerations
 
-- `BAIL=true` to stop tests on the first failure.
-- `EVM_VERSION="default"` and `HARDFORK="default"` if you would not like to use Prague, but would like Hardhat to behave by default.
-- `VIA_IR=false` to disable IR optimization. You may also need to disable it in `.solcover.js` if compilation issues when running coverage.
-- `COINMARKETCAP_API_KEY` and `ETHERSCAN_API_KEY` if you would like to see gas costs in dollars when running `pnpm testh:gas`.
+- CAPO is intended for use with derivative tokens that grow slowly and predictably (e.g., liquid staking tokens, interest-bearing assets).
+- It is **not suited** for highly volatile or freely traded assets where price movements are unpredictable or unconstrained.
+- Governance or protocol maintainers are responsible for updating snapshot data periodically to reflect current conditions.
 
-### VS Code
+---
 
-- The `Watch` button can show/hide highlighting of the code coverage in the contract files after running `pnpm coverage`. The button is in the lower left corner of the VS Code window and added by `ryanluker.vscode-coverage-gutters`.
+## Example Use Cases
 
-- Open the context menu (right-click) in a contract file, after running `pnpm coverage`, and select "Coverage Gutters: Preview Coverage Report" (or press Ctrl+Shift+6) to open the coverage HTML page directly in VS Code.
+- Lending protocols using LSTs as collateral.
+- Stablecoins backed by staking derivatives.
+- On-chain risk management systems that need rate limiting on asset appreciation.
 
-- Start writing `ss` in Solidity or TypeScript files to see some basic snippets.
-
-## Troubleshooting
-
-Run to clean up the project:
-
-```shell
-pnpm run clean
-```
-
-Afterwards, try again.
+---
