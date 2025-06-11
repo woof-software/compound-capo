@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.15;
 
-import "./interfaces/IERC4626.sol";
+import { IERC4626 } from "./interfaces/IERC4626.sol";
+import { AggregatorV3Interface } from "./interfaces/AggregatorV3Interface.sol";
 import { PriceCapAdapterBase } from "./utils/PriceCapAdapterBase.sol";
 
 /**
@@ -23,7 +24,7 @@ contract ERC4626CorrelatedAssetsPriceOracle is PriceCapAdapterBase {
      */
     constructor(
         address _manager,
-        address _baseAggregatorAddress,
+        AggregatorV3Interface _baseAggregatorAddress,
         address _ratioProviderAddress,
         string memory _description,
         uint8 _priceFeedDecimals,
@@ -45,7 +46,13 @@ contract ERC4626CorrelatedAssetsPriceOracle is PriceCapAdapterBase {
      * @notice Returns the current exchange ratio of lst to the underlying(base) asset
      */
     function getRatio() public view override returns (int256) {
-        return int256(IERC4626(ratioProvider).convertToAssets(10 ** ratioDecimals));
+        return int256(IERC4626(ratioProvider).convertToAssets(10 ** IERC4626(ratioProvider).decimals()));
+    }
+
+    /// @notice Returns the number of decimals for (lst asset / underlying asset) ratio
+    /// @dev The decimals of the underlying asset are used since the ratio is expressed in terms of the underlying asset.
+    function ratioDecimals() public view override returns (uint8) {
+        return IERC4626(IERC4626(ratioProvider).asset()).decimals();
     }
 
     /**

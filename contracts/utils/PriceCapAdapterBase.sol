@@ -44,6 +44,14 @@ abstract contract PriceCapAdapterBase {
     error InvalidCheckpointDuration();
     error InvalidAddress();
 
+    /// @notice Modifier to restrict access to the manager
+    modifier onlyManager() {
+        if (msg.sender != manager) {
+            revert OnlyManager();
+        }
+        _;
+    }
+
     /// @notice Decimal factor for percentage
     uint256 public constant BASIS_POINTS = 1e4;
 
@@ -61,9 +69,6 @@ abstract contract PriceCapAdapterBase {
 
     /// @notice Number of decimals in the output of this price feed
     uint8 public immutable decimals;
-
-    /// @notice Number of decimals for (lst asset / underlying asset) ratio
-    uint8 public immutable ratioDecimals;
 
     /// @notice Minimum time (in seconds) that should have passed from the snapshot timestamp to the current block.timestamp
     uint48 public minimumSnapshotDelay;
@@ -106,7 +111,7 @@ abstract contract PriceCapAdapterBase {
      */
     constructor(
         address _manager,
-        address _baseAggregatorAddress,
+        AggregatorV3Interface _baseAggregatorAddress,
         address _ratioProviderAddress,
         string memory _description,
         uint8 _priceFeedDecimals,
@@ -116,11 +121,11 @@ abstract contract PriceCapAdapterBase {
         if (_manager == address(0)) {
             revert ManagerIsZeroAddress();
         }
-        if (_baseAggregatorAddress == address(0) || _ratioProviderAddress == address(0)) {
+        if (address(_baseAggregatorAddress) == address(0) || _ratioProviderAddress == address(0)) {
             revert InvalidAddress();
         }
         manager = _manager;
-        assetToBaseAggregator = AggregatorV3Interface(_baseAggregatorAddress);
+        assetToBaseAggregator = _baseAggregatorAddress;
         ratioProvider = _ratioProviderAddress;
         uint8 underlyingPriceFeedDecimals = assetToBaseAggregator.decimals();
         // Note: Solidity does not allow setting immutables in if/else statements
@@ -131,7 +136,6 @@ abstract contract PriceCapAdapterBase {
                 : signed256(10 ** (underlyingPriceFeedDecimals - _priceFeedDecimals))
         );
         decimals = _priceFeedDecimals;
-        ratioDecimals = AggregatorV3Interface(ratioProvider).decimals();
         minimumSnapshotDelay = _minimumSnapshotDelay;
 
         description = _description;
@@ -143,11 +147,7 @@ abstract contract PriceCapAdapterBase {
      * @notice Updates price cap parameters
      * @param priceCapParams Parameters to set price cap
      */
-    function updateSnapshot(PriceCapSnapshot memory priceCapParams) external {
-        if (msg.sender != manager) {
-            revert OnlyManager();
-        }
-
+    function updateSnapshot(PriceCapSnapshot memory priceCapParams) external onlyManager {
         _setSnapshot(priceCapParams);
     }
 
@@ -155,11 +155,7 @@ abstract contract PriceCapAdapterBase {
      * @notice Sets the manager address
      * @param newManager Address of the new manager
      */
-    function setManager(address newManager) external {
-        if (msg.sender != manager) {
-            revert OnlyManager();
-        }
-
+    function setManager(address newManager) external onlyManager {
         if (newManager == address(0)) {
             revert ManagerIsZeroAddress();
         }
@@ -172,11 +168,7 @@ abstract contract PriceCapAdapterBase {
      * @notice Sets the minimum snapshot delay
      * @param newMinimumSnapshotDelay Minimum time that should have passed from the snapshot timestamp to the current block.timestamp
      */
-    function setMinimumSnapshotDelay(uint48 newMinimumSnapshotDelay) external {
-        if (msg.sender != manager) {
-            revert OnlyManager();
-        }
-
+    function setMinimumSnapshotDelay(uint48 newMinimumSnapshotDelay) external onlyManager {
         minimumSnapshotDelay = newMinimumSnapshotDelay;
         emit NewMinimumSnapshotDelay(newMinimumSnapshotDelay);
     }
@@ -195,16 +187,11 @@ abstract contract PriceCapAdapterBase {
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
         int256 currentRatio = getRatio();
-        (
-            uint80 roundId_,
-            int256 _price,
-            uint256 startedAt_,
-            uint256 updatedAt_,
-            uint80 answeredInRound_
-        ) = assetToBaseAggregator.latestRoundData();
+        int256 _price;
+        (roundId, _price, startedAt, updatedAt, answeredInRound) = assetToBaseAggregator.latestRoundData();
 
         if (_price <= 0 || currentRatio <= 0) {
-            return (roundId_, 0, startedAt_, updatedAt_, answeredInRound_);
+            return (roundId, 0, startedAt, updatedAt, answeredInRound);
         }
 
         int256 maxRatio = _getMaxRatio();
@@ -213,9 +200,7 @@ abstract contract PriceCapAdapterBase {
             currentRatio = maxRatio;
         }
 
-        int256 price = (_price * currentRatio) / int256(10 ** ratioDecimals);
-
-        return (roundId_, _scalePrice(price), startedAt_, updatedAt_, answeredInRound_);
+        answer = _scalePrice((_price * currentRatio) / int256(10 ** ratioDecimals()));
     }
 
     /**
@@ -238,7 +223,7 @@ abstract contract PriceCapAdapterBase {
      * @param priceCapParams Parameters to set price cap
      */
     function _setSnapshot(PriceCapSnapshot memory priceCapParams) internal {
-        if (msg.sender != manager && lastSnapshotUpdateTimestamp == block.timestamp) return;
+        if (lastSnapshotUpdateTimestamp == block.timestamp) return;
         lastSnapshotUpdateTimestamp = block.timestamp;
         // if snapshot ratio is 0 then growth will not work as expected
         if (priceCapParams.snapshotRatio == 0) {
@@ -248,7 +233,7 @@ abstract contract PriceCapAdapterBase {
         // new snapshot timestamp should be gt than stored one, but not gt than timestamp of the current block
         if (
             snapshotTimestamp > priceCapParams.snapshotTimestamp ||
-            (msg.sender != manager && priceCapParams.snapshotTimestamp > block.timestamp - minimumSnapshotDelay)
+            priceCapParams.snapshotTimestamp > block.timestamp - minimumSnapshotDelay
         ) {
             revert InvalidRatioTimestamp(priceCapParams.snapshotTimestamp);
         }
@@ -279,6 +264,9 @@ abstract contract PriceCapAdapterBase {
 
     /// @notice Returns the current exchange ratio of lst to the underlying(base) asset
     function getRatio() public view virtual returns (int256);
+
+    /// @notice Returns the number of decimals for (lst asset / underlying asset) ratio
+    function ratioDecimals() public view virtual returns (uint8);
 
     /// @notice Returns if the price is currently capped
     function isCapped() public view returns (bool) {
