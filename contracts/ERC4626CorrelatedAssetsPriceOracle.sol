@@ -13,6 +13,9 @@ contract ERC4626CorrelatedAssetsPriceOracle is PriceCapAdapterBase {
     /// @notice Version of the price feed
     uint public constant VERSION = 1;
 
+    uint8 internal _ratioDecimals;
+    uint8 internal _providerDecimals;
+
     /**
      * @param _manager address of the manager
      * @param _baseAggregatorAddress address of the base aggregator
@@ -40,19 +43,22 @@ contract ERC4626CorrelatedAssetsPriceOracle is PriceCapAdapterBase {
             _minimumSnapshotDelay,
             _priceCapSnapshot
         )
-    {}
+    {
+        _ratioDecimals = IERC4626(IERC4626(ratioProvider).asset()).decimals();
+        _providerDecimals = IERC4626(ratioProvider).decimals();
+    }
 
     /**
      * @notice Returns the current exchange ratio of lst to the underlying(base) asset
      */
     function getRatio() public view override returns (int256) {
-        return int256(IERC4626(ratioProvider).convertToAssets(10 ** IERC4626(ratioProvider).decimals()));
+        return int256(IERC4626(ratioProvider).convertToAssets(10 ** _providerDecimals));
     }
 
     /// @notice Returns the number of decimals for (lst asset / underlying asset) ratio
     /// @dev The decimals of the underlying asset are used since the ratio is expressed in terms of the underlying asset.
     function ratioDecimals() public view override returns (uint8) {
-        return IERC4626(IERC4626(ratioProvider).asset()).decimals();
+        return _ratioDecimals;
     }
 
     /**
