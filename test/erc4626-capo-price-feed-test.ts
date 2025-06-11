@@ -24,8 +24,14 @@ export async function makeCAPOPriceFeed({
     'SimpleERC4626RatePriceFeed'
   );
 
+  const MockERC20 = await ethers.getContractFactory(
+    'MockERC20'
+  );
+
+  const assetA = await MockERC20.deploy('Asset A', 'ASSET_A', decimalsB);
+  await assetA.waitForDeployment();
   const PriceFeedA = await SimplePriceFeedFactory.deploy(priceA, decimalsA);
-  const PriceFeedB = await SimpleERC4626RatePriceFeed.deploy(priceB, decimalsB);
+  const PriceFeedB = await SimpleERC4626RatePriceFeed.deploy(priceB, decimalsB, await assetA.getAddress());
 
   await PriceFeedA.waitForDeployment();
   await PriceFeedB.waitForDeployment();
@@ -130,13 +136,19 @@ describe('CAPO price feed', function() {
       'SimplePriceFeed'
     );
 
+    const MockERC20 = await ethers.getContractFactory(
+        'MockERC20'
+    );
+
+  const assetA = await MockERC20.deploy('Asset A', 'ASSET_A', 8);
+  await assetA.waitForDeployment();
     const SimpleERC4626RatePriceFeed = await ethers.getContractFactory(
       'SimpleERC4626RatePriceFeed'
     );
 
     const PriceFeedA = await SimplePriceFeedFactory.deploy(exp(1, 8), 8);
 
-    const PriceFeedB = await SimpleERC4626RatePriceFeed.deploy(exp(30_000), 8);
+    const PriceFeedB = await SimpleERC4626RatePriceFeed.deploy(exp(30_000), 8, await assetA.getAddress());
 
     const ERC4626CorrelatedAssetsPriceOracle = await ethers.getContractFactory(
       'ERC4626CorrelatedAssetsPriceOracle'
@@ -159,9 +171,16 @@ describe('CAPO price feed', function() {
   });
 
   it('reverts if constructed with bad price feed', async () => {
+    const [signer] = await ethers.getSigners();
     const SimplePriceFeedFactory = await ethers.getContractFactory(
       'SimplePriceFeed'
     );
+
+    const MockERC20 = await ethers.getContractFactory(
+      'MockERC20'
+    );
+    const assetA = await MockERC20.deploy('Asset A', 'ASSET_A', 8);
+    await assetA.waitForDeployment();
 
     const SimpleERC4626RatePriceFeed = await ethers.getContractFactory(
       'SimpleERC4626RatePriceFeed'
@@ -170,7 +189,7 @@ describe('CAPO price feed', function() {
     const PriceFeedA = await SimplePriceFeedFactory.deploy(exp(1, 8), 8);
     await PriceFeedA.waitForDeployment();
 
-    const PriceFeedB = await SimpleERC4626RatePriceFeed.deploy(exp(30_000), 8);
+    const PriceFeedB = await SimpleERC4626RatePriceFeed.deploy(exp(30_000), 8, await assetA.getAddress());
     await PriceFeedB.waitForDeployment();
 
     const ERC4626CorrelatedAssetsPriceOracle = await ethers.getContractFactory(
@@ -179,7 +198,7 @@ describe('CAPO price feed', function() {
 
     await expect(
       ERC4626CorrelatedAssetsPriceOracle.deploy(
-        await PriceFeedB.getAddress(),
+        signer.address,
         AddressZero,
         await PriceFeedB.getAddress(),
         'CAPO Price Feed',
@@ -193,8 +212,8 @@ describe('CAPO price feed', function() {
       )).to.be.revertedWithCustomError(ERC4626CorrelatedAssetsPriceOracle, 'InvalidAddress()');
     await expect(
       ERC4626CorrelatedAssetsPriceOracle.deploy(
-        await PriceFeedB.getAddress(),
-        await PriceFeedB.getAddress(),
+        signer.address,
+        await PriceFeedA.getAddress(),
         AddressZero,
         'CAPO Price Feed',
         8,
@@ -234,6 +253,88 @@ describe('CAPO price feed', function() {
       });
     }
 
+    it('returns same result even if underlying and ration decimals are different', async () => {
+        const [signer] = await ethers.getSigners();
+        const SimplePriceFeedFactory = await ethers.getContractFactory(
+            'SimplePriceFeed'
+        );
+
+        const SimpleERC4626RatePriceFeed = await ethers.getContractFactory(
+            'SimpleERC4626RatePriceFeed'
+        );
+
+        const MockERC20 = await ethers.getContractFactory(
+            'MockERC20'
+        );
+
+        const assetA = await MockERC20.deploy('Asset A', 'ASSET_A', 8);
+        await assetA.waitForDeployment();
+        const PriceFeedA = await SimplePriceFeedFactory.deploy(exp(30, 18), 18);
+        const PriceFeedB = await SimpleERC4626RatePriceFeed.deploy(exp(1.115, 8), 18, await assetA.getAddress());
+
+        await PriceFeedA.waitForDeployment();
+        await PriceFeedB.waitForDeployment();
+
+        const ERC4626CorrelatedAssetsPriceOracleFactory = await ethers.getContractFactory(
+            'ERC4626CorrelatedAssetsPriceOracle'
+        );
+
+        const currentTimestamp = await ethers.provider.getBlock('latest').then(b => {
+            if (!b) throw new Error('Block not found');
+            return b.timestamp;
+        });
+
+        const CapoPriceFeed = await ERC4626CorrelatedAssetsPriceOracleFactory.deploy(
+            signer.address,
+            await PriceFeedA.getAddress(),
+            await PriceFeedB.getAddress(),
+            'CAPO Price Feed',
+            8,
+            3600,
+            {
+                snapshotRatio: exp(1.115, 18),
+                snapshotTimestamp: currentTimestamp - 3600,
+                maxYearlyRatioGrowthPercent: exp(0.01, 4)
+            }
+        );
+
+        const latestRoundData = await CapoPriceFeed.latestRoundData();
+        const price1 = latestRoundData[1];
+
+
+        const assetA2 = await MockERC20.deploy('Asset A', 'ASSET_A', 18);
+        await assetA2.waitForDeployment();
+        const PriceFeedA2 = await SimplePriceFeedFactory.deploy(exp(30, 18), 18);
+        const PriceFeedB2 = await SimpleERC4626RatePriceFeed.deploy(exp(1.115, 18), 18, await assetA2.getAddress());
+
+        await PriceFeedA2.waitForDeployment();
+        await PriceFeedB2.waitForDeployment();
+
+        const currentTimestamp2 = await ethers.provider.getBlock('latest').then(b => {
+            if (!b) throw new Error('Block not found');
+            return b.timestamp;
+        });
+
+        const CapoPriceFeed2 = await ERC4626CorrelatedAssetsPriceOracleFactory.deploy(
+            signer.address,
+            await PriceFeedA2.getAddress(),
+            await PriceFeedB2.getAddress(),
+            'CAPO Price Feed',
+            8,
+            3600,
+            {
+                snapshotRatio: exp(1.115, 18),
+                snapshotTimestamp: currentTimestamp2 - 3600,
+                maxYearlyRatioGrowthPercent: exp(0.01, 4)
+            }
+        );
+
+        const latestRoundData2 = await CapoPriceFeed2.latestRoundData();
+        const price2 = latestRoundData2[1];
+
+        expect(price1).to.eq(price2);
+    });
+
     it('if current rate > last snapshot * max yearly growth rate, then price is capped and rate == max rate', async () => {
       const { CapoPriceFeed, PriceFeedB } = await makeCAPOPriceFeed({
         priceA: exp(1, 18),
@@ -243,11 +344,7 @@ describe('CAPO price feed', function() {
       });
 
       await PriceFeedB.setRoundData(
-        exp(1, 18),      // roundId_,
-        exp(35_000, 18), // answer_,
-        exp(2, 8),       // startedAt_,
-        exp(3, 8),       // updatedAt_,
-        exp(4, 18)       // answeredInRound_
+        exp(35_000, 18), // answer_
       );
 
       const latestRoundData = await CapoPriceFeed.latestRoundData();

@@ -3,44 +3,25 @@ pragma solidity 0.8.15;
 
 import "../interfaces/AggregatorV3Interface.sol";
 
-contract SimpleERC4626RatePriceFeed is AggregatorV3Interface {
-    string public constant override description = "Mock Chainlink price aggregator";
+contract SimpleERC4626RatePriceFeed {
+    string public constant description = "Mock Chainlink price aggregator";
 
-    uint public constant override version = 1;
+    uint public constant version = 1;
 
-    uint8 public immutable override decimals;
+    uint8 public immutable decimals;
 
-    uint80 internal roundId;
+    address public immutable asset;
+
     int256 internal answer;
-    uint256 internal startedAt;
-    uint256 internal updatedAt;
-    uint80 internal answeredInRound;
 
-    constructor(int answer_, uint8 decimals_) {
+    constructor(int answer_, uint8 decimals_, address _asset) {
         answer = answer_;
         decimals = decimals_;
+        asset = _asset;
     }
 
-    function setRoundData(
-        uint80 roundId_,
-        int256 answer_,
-        uint256 startedAt_,
-        uint256 updatedAt_,
-        uint80 answeredInRound_
-    ) public {
-        roundId = roundId_;
+    function setRoundData(int256 answer_) public {
         answer = answer_;
-        startedAt = startedAt_;
-        updatedAt = updatedAt_;
-        answeredInRound = answeredInRound_;
-    }
-
-    function getRoundData(uint80 roundId_) external view override returns (uint80, int256, uint256, uint256, uint80) {
-        return (roundId_, answer, startedAt, updatedAt, answeredInRound);
-    }
-
-    function latestRoundData() external view override returns (uint80, int256, uint256, uint256, uint80) {
-        return (roundId, answer, startedAt, updatedAt, answeredInRound);
     }
 
     function convertToAssets(uint256) external view returns (uint256) {
