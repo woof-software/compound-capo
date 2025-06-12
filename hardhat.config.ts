@@ -24,10 +24,12 @@ dotenv.config();
 import "./scripts/tasks/generate-account";
 
 const envs = process.env;
+const ANKR_KEY = envs.ANKR_KEY ?? "";
+const UNICHAIN_QUICKNODE_KEY = envs.UNICHAIN_QUICKNODE_KEY ?? "";
 
 // Private keys can be set in `.env` file.
 const ethereumMainnetKeys = envs.ETHEREUM_MAINNET_KEYS?.split(",") ?? [];
-const ethereumTestnetKeys = envs.ETHEREUM_TESTNET_KEYS?.split(",") ?? [];
+// const ethereumTestnetKeys = envs.ETHEREUM_TESTNET_KEYS?.split(",") ?? [];
 
 const isOptionTrue = (option: string | undefined) => ["true", "1"].includes(option ?? "");
 
@@ -106,27 +108,66 @@ const config: HardhatUserConfig = {
             // gas: 3E7,
             // gasPrice: 8E9
         },
-        // Ethereum:
         ethereum: {
             chainId: 1,
-            url: envs.ETHEREUM_URL ?? "",
-            accounts: [...ethereumMainnetKeys]
+            url: `https://rpc.ankr.com/eth/${ANKR_KEY}`,
+            accounts: [...ethereumMainnetKeys],
         },
         sepolia: {
             chainId: 11155111,
-            url: envs.SEPOLIA_URL ?? "",
-            accounts: [...ethereumTestnetKeys]
+            url: `https://rpc.ankr.com/eth_sepolia/${ANKR_KEY}`,
+            accounts: [...ethereumMainnetKeys],
         },
-        holesky: {
-            chainId: 17000,
-            url: envs.HOLESKY_URL ?? "",
-            accounts: [...ethereumTestnetKeys]
+        ronin: {
+            chainId: 2020,
+            url: 'https://ronin.lgns.net/rpc',
+            accounts: [...ethereumMainnetKeys],
         },
-        hoodi: {
-            chainId: 560048,
-            url: envs.HOODI_URL ?? "",
-            accounts: [...ethereumTestnetKeys]
-        }
+        polygon: {
+            chainId: 137,
+            url: `https://rpc.ankr.com/polygon/${ANKR_KEY}`,
+            accounts: [...ethereumMainnetKeys],
+        },
+        optimism: {
+            chainId: 10,
+            url: `https://rpc.ankr.com/optimism/${ANKR_KEY}`,
+            accounts: [...ethereumMainnetKeys],
+        },
+        mantle: {
+            chainId: 5000,
+            url: `https://rpc.ankr.com/mantle/${ANKR_KEY}`,
+            accounts: [...ethereumMainnetKeys],
+        },
+        unichain: {
+            chainId: 130,
+            url: `https://multi-boldest-patina.unichain-mainnet.quiknode.pro/${UNICHAIN_QUICKNODE_KEY}`,
+            accounts: [...ethereumMainnetKeys],
+        },
+        base: {
+            chainId: 8453,
+            url: `https://rpc.ankr.com/base/${ANKR_KEY}`,
+            accounts: [...ethereumMainnetKeys],
+        },
+        arbitrum: {
+            chainId: 42161,
+            url: `https://rpc.ankr.com/arbitrum/${ANKR_KEY}`,
+            accounts: [...ethereumMainnetKeys],
+        },
+        avalanche: {
+            chainId: 43114,
+            url: 'https://api.avax.network/ext/bc/C/rpc',
+            accounts: [...ethereumMainnetKeys],
+        },
+        fuji: {
+            chainId: 43113,
+            url: 'https://api.avax-test.network/ext/bc/C/rpc',
+            accounts: [...ethereumMainnetKeys],
+        },
+        scroll: {
+            chainId: 534352,
+            url: 'https://rpc.scroll.io',
+            accounts: [...ethereumMainnetKeys],
+        },
     },
     etherscan: {
         // To see supported networks and their identifiers for `apiKey`, run `pnpm hardhat verify --list-networks`.
