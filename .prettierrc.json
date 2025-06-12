@@ -1,11 +1,13 @@
 {
-    "plugins": ["prettier-plugin-solidity"],
+    "plugins": [
+        "prettier-plugin-solidity"
+    ],
     "overrides": [
         {
             "files": "*.sol",
             "options": {
                 "parser": "slang",
-                "printWidth": 120,
+                "printWidth": 150,
                 "tabWidth": 4,
                 "useTabs": false,
                 "singleQuote": false,
@@ -15,10 +17,14 @@
             }
         },
         {
-            "files": ["*.ts", "*.js", "eslint.config.mjs"],
+            "files": [
+                "*.ts",
+                "*.js",
+                "eslint.config.mjs"
+            ],
             "options": {
                 "trailingComma": "none",
-                "printWidth": 120,
+                "printWidth": 150,
                 "tabWidth": 4,
                 "useTabs": false,
                 "singleQuote": false,
@@ -27,7 +33,10 @@
             }
         },
         {
-            "files": ["*.json", "*.jsonc"],
+            "files": [
+                "*.json",
+                "*.jsonc"
+            ],
             "options": {
                 "tabWidth": 4
             }

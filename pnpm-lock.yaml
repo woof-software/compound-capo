@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@openzeppelin/contracts':
-        specifier: 5.3.0
-        version: 5.3.0
+        specifier: 4.8.3
+        version: 4.8.3
     devDependencies:
       '@commitlint/cli':
         specifier: 19.8.0
@@ -755,8 +755,8 @@ packages:
     resolution: {integrity: sha512-q4n32/FNKIhQ3zQGGw5CvPF6GTvDCpYwIf7bEY/dZTZbgfDsHyjJwURxUJf3VQuuJj+fDIFl4+KkBVbw4Ef6jA==}
     engines: {node: '>= 12'}
 
-  '@openzeppelin/contracts@5.3.0':
-    resolution: {integrity: sha512-zj/KGoW7zxWUE8qOI++rUM18v+VeLTTzKs/DJFkSzHpQFPD/jKKF0TrMxBfGLl3kpdELCNccvB3zmofSzm4nlA==}
+  '@openzeppelin/contracts@4.8.3':
+    resolution: {integrity: sha512-bQHV8R9Me8IaJoJ2vPG4rXcL7seB7YVuskr4f+f5RyOStSZetwzkWtoqDMl5erkBJy0lDRUnIR2WIkPiC0GJlg==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -4079,7 +4079,7 @@ snapshots:
       '@nomicfoundation/solidity-analyzer-linux-x64-musl': 0.1.2
       '@nomicfoundation/solidity-analyzer-win32-x64-msvc': 0.1.2
 
-  '@openzeppelin/contracts@5.3.0': {}
+  '@openzeppelin/contracts@4.8.3': {}
 
   '@pkgjs/parseargs@0.11.0':
     optional: true

@@ -8,6 +8,10 @@ node_modules/
 /cache/
 /artifacts/
 
+# Foundry.
+/out/
+/cache_forge/
+
 # TypeChain.
 /typechain/
 /typechain-types/
