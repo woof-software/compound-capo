@@ -1,40 +1,32 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { ethers } from "hardhat";
 
 import { IERC4626__factory } from "../../typechain-types";
+import dotenv from "dotenv";
+import { readFileSync } from "fs";
+import { join } from "path";
 
-// Constructor arguments
+dotenv.config();
 
+const jsonPath = process.env.CAPO_ARGS_PATH;
+if (!jsonPath) {
+  throw new Error("Missing CAPO_ARGS_PATH in .env");
+}
+
+// Read and parse JSON file
+const rawJson = JSON.parse(readFileSync(join(__dirname, "..", "..", jsonPath), "utf-8"));
+
+// Parse constructorArgs with BigInt conversion
 const constructorArgs = {
-    manager: "0xYourManagerAddress", // Admin or protocol manager
-    baseAggregator: "0xBaseAggregatorAddress", // Chainlink feed, e.g. USDM/USD
-    ratioProvider: "0xRatioProviderAddress", // ERC-4626 or LST ratio provider
-    description: "CAPO: wUSDM / USD",
-    priceFeedDecimals: 8,
-    minimumSnapshotDelay: 86400, // 24 hours
-    priceCapSnapshot: {
-        snapshotRatio: 0n, // Initial ratio snapshot, will be set to current ratio if 0
-        snapshotTimestamp: 0n, // Initial timestamp snapshot, will be set to current time if 0
-        maxYearlyRatioGrowthPercent: 800 // 8% growth per year in basis points
-    }
+  ...rawJson,
+  priceCapSnapshot: {
+    snapshotRatio: BigInt(rawJson.priceCapSnapshot.snapshotRatio),
+    snapshotTimestamp: BigInt(rawJson.priceCapSnapshot.snapshotTimestamp),
+    maxYearlyRatioGrowthPercent: rawJson.priceCapSnapshot.maxYearlyRatioGrowthPercent
+  }
 };
-
-// example constructorArgs for wUSDM / USD on Optimism mainnet
-// const constructorArgs = {
-//     manager: "0x05ED81814BE2D9731c8906133236FFE9C62B013E", // Admin or protocol manager
-//     baseAggregator: "0xA45881b63ff9BE3F9a3439CA0c002686e65a8ED5", // Chainlink feed, e.g. USDM/USD
-//     ratioProvider: "0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812", // ERC-4626 or LST ratio provider
-//     description: "CAPO: wUSDM / USD",
-//     priceFeedDecimals: 8,
-//     minimumSnapshotDelay: 86400, // 24 hours
-//     priceCapSnapshot: {
-//         snapshotRatio: 0n, // Initial ratio snapshot, will be set to current ratio if 0
-//         snapshotTimestamp: 0n, // Initial timestamp snapshot, will be set to current time if 0
-//         maxYearlyRatioGrowthPercent: 800 // 8% growth per year in basis points
-//     }
-// };
 
 async function main() {
     const [deployer] = await ethers.getSigners();
