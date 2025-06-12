@@ -1,0 +1,13 @@
+{
+    "manager": "0x05ED81814BE2D9731c8906133236FFE9C62B013E",
+    "baseAggregator": "0xA45881b63ff9BE3F9a3439CA0c002686e65a8ED5",
+    "ratioProvider": "0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812",
+    "description": "CAPO: wUSDM / USD",
+    "priceFeedDecimals": 8,
+    "minimumSnapshotDelay": 86400,
+    "priceCapSnapshot": {
+        "snapshotRatio": "0",
+        "snapshotTimestamp": "0",
+        "maxYearlyRatioGrowthPercent": "800"
+    }
+}
