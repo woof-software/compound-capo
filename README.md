@@ -54,6 +54,28 @@ If the live ratio exceeds the computed cap, CAPO returns the maximum allowed rat
 
 ---
 
+## Supported Markets
+
+The table below outlines the current and planned markets where CAPO may be integrated, along with the associated collateral types. The "CAPO" column indicates whether the asset is configured to use CAPO’s price capping mechanism.
+
+**Note**: CAPO is under active development and not yet deployed. This list is for informational purposes only and will be updated as integration progresses.
+
+At this stage, CAPO is planned only for ERC-4626 yield vaults. Support for liquid staking tokens (LSTs) and liquid restaking tokens (LRTs) is under consideration for future phases.
+
+| Network  | Market  | Collateral | Type                   | CAPO |
+| -------- | ------- | ---------- | ---------------------- | ---- |
+| Mainnet  | cWETHv3 | cbETH      | Liquid Staking Token   | ❌   |
+| Mainnet  | cWETHv3 | rsETH      | Liquid Restaking Token | ❌   |
+| Mainnet  | cUSDTv3 | wUSDM      | ERC-4626 Yield Vault   | ✅   |
+| Mainnet  | cUSDTv3 | sFRAX      | ERC-4626 Yield Vault   | ✅   |
+| Mainnet  | cUSDTv3 | sUSDS      | ERC-4626 Yield Vault   | ✅   |
+| Optimism | cUSDCv3 | wUSDM      | ERC-4626 Yield Vault   | ✅   |
+| Arbitrum | cUSDCv3 | wUSDM      | ERC-4626 Yield Vault   | ✅   |
+| Base     | cAEROv3 | wstETH     | Liquid Staking Token   | ❌   |
+| Mantle   | cUSDev3 | mETH       | Liquid Staking Token   | ❌   |
+
+---
+
 ## Example Use Cases
 
 - Lending protocols using LSTs as collateral.
