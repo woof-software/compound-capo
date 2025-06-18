@@ -27,7 +27,7 @@ abstract contract PriceCapAdapterBase {
      * @notice Price cap snapshot
      * @param snapshotRatio Ratio at the time of snapshot
      * @param snapshotTimestamp Timestamp at the time of snapshot
-     * @param maxYearlyRatioGrowthPercent Max yearly growth percent
+     * @param maxYearlyRatioGrowthPercent Max yearly growth percent, scaled by BASIS_POINTS
      */
     struct PriceCapSnapshot {
         uint256 snapshotRatio;
@@ -88,7 +88,7 @@ abstract contract PriceCapAdapterBase {
     /// @notice Growth ratio scale
     uint256 public constant GROWTH_RATIO_SCALE = 1e10;
 
-    /// @notice Max yearly growth percent
+    /// @notice Max yearly growth percent, scaled by BASIS_POINTS
     uint32 public maxYearlyRatioGrowthPercent;
 
     /// @notice Whether or not the price should be upscaled
@@ -132,8 +132,8 @@ abstract contract PriceCapAdapterBase {
         shouldUpscale = underlyingPriceFeedDecimals < _priceFeedDecimals ? true : false;
         rescaleFactor = (
             shouldUpscale
-                ? signed256(10 ** (_priceFeedDecimals - underlyingPriceFeedDecimals))
-                : signed256(10 ** (underlyingPriceFeedDecimals - _priceFeedDecimals))
+                ? _signed256(10 ** (_priceFeedDecimals - underlyingPriceFeedDecimals))
+                : _signed256(10 ** (underlyingPriceFeedDecimals - _priceFeedDecimals))
         );
         decimals = _priceFeedDecimals;
         minimumSnapshotDelay = _minimumSnapshotDelay;
@@ -181,11 +181,7 @@ abstract contract PriceCapAdapterBase {
      * @return updatedAt Timestamp when the round was last updated; passed on from underlying price feed
      * @return answeredInRound Round id in which the answer was computed; passed on from underlying price feed
      **/
-    function latestRoundData()
-        external
-        view
-        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
-    {
+    function latestRoundData() external view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) {
         int256 currentRatio = getRatio();
         int256 _price;
         (roundId, _price, startedAt, updatedAt, answeredInRound) = assetToBaseAggregator.latestRoundData();
@@ -231,10 +227,7 @@ abstract contract PriceCapAdapterBase {
         }
 
         // new snapshot timestamp should be gt than stored one, but not gt than timestamp of the current block
-        if (
-            snapshotTimestamp > priceCapParams.snapshotTimestamp ||
-            priceCapParams.snapshotTimestamp > block.timestamp - minimumSnapshotDelay
-        ) {
+        if (snapshotTimestamp > priceCapParams.snapshotTimestamp || priceCapParams.snapshotTimestamp > block.timestamp - minimumSnapshotDelay) {
             revert InvalidRatioTimestamp(priceCapParams.snapshotTimestamp);
         }
         snapshotRatio = priceCapParams.snapshotRatio;
@@ -247,10 +240,7 @@ abstract contract PriceCapAdapterBase {
             SECONDS_PER_YEAR;
 
         // if the ratio on the current growth speed can overflow less than in a 3 years, revert
-        if (
-            uint256(snapshotRatio) + uint256(maxRatioGrowthPerSecond * SECONDS_PER_YEAR * 3) / GROWTH_RATIO_SCALE >
-            type(uint128).max
-        ) {
+        if (uint256(snapshotRatio) + uint256(maxRatioGrowthPerSecond * SECONDS_PER_YEAR * 3) / GROWTH_RATIO_SCALE > type(uint128).max) {
             revert SnapshotCloseToOverflow(priceCapParams.snapshotRatio, priceCapParams.maxYearlyRatioGrowthPercent);
         }
 
@@ -275,13 +265,10 @@ abstract contract PriceCapAdapterBase {
 
     /// @notice Returns the maximum ratio that can be achieved at the current block.timestamp
     function _getMaxRatio() internal view returns (int256) {
-        return
-            int256(
-                snapshotRatio + (maxRatioGrowthPerSecond * (block.timestamp - snapshotTimestamp)) / GROWTH_RATIO_SCALE
-            );
+        return int256(snapshotRatio + (maxRatioGrowthPerSecond * (block.timestamp - snapshotTimestamp)) / GROWTH_RATIO_SCALE);
     }
 
-    function signed256(uint256 n) internal pure returns (int256) {
+    function _signed256(uint256 n) internal pure returns (int256) {
         if (n > uint256(type(int256).max)) revert InvalidInt256();
         return int256(n);
     }
