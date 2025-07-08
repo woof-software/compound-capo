@@ -22,7 +22,7 @@ contract WstETHCorrelatedAssetsPriceOracle is PriceCapAdapterBase {
         return int256(IWstETH(ratioProvider).tokensPerStEth());
     }
 
-    function ratioDecimals() public view override returns (uint8) {
+    function ratioDecimals() public pure override returns (uint8) {
         return 18;
     }
 

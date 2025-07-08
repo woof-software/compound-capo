@@ -14,17 +14,7 @@ contract ChainlinkCorrelatedAssetsPriceOracle is PriceCapAdapterBase {
         uint8 _priceFeedDecimals,
         uint48 _minSnapshotDelay,
         PriceCapSnapshot memory _snap
-    )
-        PriceCapAdapterBase(
-            _manager,
-            _baseAggregatorAddress,
-            address(_baseAggregatorAddress),
-            _description,
-            _priceFeedDecimals,
-            _minSnapshotDelay,
-            _snap
-        )
-    {}
+    ) PriceCapAdapterBase(_manager, _baseAggregatorAddress, address(this), _description, _priceFeedDecimals, _minSnapshotDelay, _snap) {}
 
     function getRatio() public pure override returns (int256) {
         return 1e18;

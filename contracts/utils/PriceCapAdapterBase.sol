@@ -181,7 +181,12 @@ abstract contract PriceCapAdapterBase {
      * @return updatedAt Timestamp when the round was last updated; passed on from underlying price feed
      * @return answeredInRound Round id in which the answer was computed; passed on from underlying price feed
      **/
-    function latestRoundData() external view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) {
+    function latestRoundData()
+        external
+        view
+        virtual
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
+    {
         int256 currentRatio = getRatio();
         int256 _price;
         (roundId, _price, startedAt, updatedAt, answeredInRound) = assetToBaseAggregator.latestRoundData();

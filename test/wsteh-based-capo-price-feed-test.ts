@@ -24,7 +24,7 @@ export async function makeWstETHCAPO({ priceA, ratio, decimalsA = 8 }: { priceA:
     const MockWst = await ethers.getContractFactory("MockWstETH");
     const OracleFac = await ethers.getContractFactory("WstETHCorrelatedAssetsPriceOracle");
     const feedA = await MockAgg.deploy(priceA, decimalsA);
-    const wst = await MockWst.deploy(ratio);
+    const wst = await MockWst.deploy(18, ratio);
     const now = (await ethers.provider.getBlock("latest"))!.timestamp;
     const oracle = await OracleFac.deploy(mgr.address, await feedA.getAddress(), await wst.getAddress(), "wstETH CAPO", FEED_DECIMALS, 3600, {
         snapshotRatio: ratio,
@@ -54,7 +54,7 @@ describe("wstETH CAPO price feed", () => {
         const MockWst = await ethers.getContractFactory("MockWstETH");
         const Oracle = await ethers.getContractFactory("WstETHCorrelatedAssetsPriceOracle");
         const agg = await MockAgg.deploy(exp(1, 8), 8);
-        const wst = await MockWst.deploy(exp(1.05, 18));
+        const wst = await MockWst.deploy(18, exp(1.05, 18));
         const now = (await ethers.provider.getBlock("latest"))!.timestamp;
         await expect(
             Oracle.deploy(AddressZero, await agg.getAddress(), await wst.getAddress(), "bad", 8, 0, {
@@ -95,7 +95,7 @@ describe("wstETH CAPO price feed", () => {
             const baseRatio = exp(1.05, 18);
             const { oracle, wst } = await makeWstETHCAPO({ priceA: exp(2_000, 8), ratio: baseRatio });
             await ethers.provider.send("evm_increaseTime", [3600]);
-            await wst.setRatio(exp(1.16, 18));
+            await wst.setRate(exp(1.16, 18));
             const [, price] = await oracle.latestRoundData();
             expect(await oracle.isCapped()).to.be.true;
             expect(price).to.be.lt(expected(exp(2_000, 8), exp(1.16, 18), 8));
