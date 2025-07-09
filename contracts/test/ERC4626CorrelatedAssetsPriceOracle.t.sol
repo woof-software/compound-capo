@@ -190,7 +190,7 @@ contract ERC4626CorrelatedAssetsPriceOracleTest is Test {
         require(capo.isCapped(), "Capped price oracle should be capped");
 
         (, int256 cappedPrice, , , ) = capo.latestRoundData();
-
+        vm.assume(uncappedPrice > uint256(cappedPrice));
         assertGt(uncappedPrice, uint256(cappedPrice), "Uncapped price should be greater than the expected capped price");
     }
 

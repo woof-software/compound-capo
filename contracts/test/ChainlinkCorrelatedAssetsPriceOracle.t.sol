@@ -13,6 +13,7 @@ contract ChainliChainlinkCorrelatedAssetsPriceOracleTest is Test {
     address manager;
 
     SimplePriceFeed clFeed;
+    SimplePriceFeed ratioFeed;
     ChainlinkCorrelatedAssetsPriceOracle capo;
 
     function setUp() public {
@@ -22,14 +23,22 @@ contract ChainliChainlinkCorrelatedAssetsPriceOracleTest is Test {
 
     function _deploy(uint8 feedDec, uint8 outDec, int256 priceA) internal {
         clFeed = new SimplePriceFeed(priceA, feedDec);
-
+        ratioFeed = new SimplePriceFeed(1e18, 18);
         PriceCapAdapterBase.PriceCapSnapshot memory snap = PriceCapAdapterBase.PriceCapSnapshot({
             snapshotRatio: 1e18,
             snapshotTimestamp: uint48(block.timestamp - 1 hours),
             maxYearlyRatioGrowthPercent: 100
         });
 
-        capo = new ChainlinkCorrelatedAssetsPriceOracle(manager, AggregatorV3Interface(address(clFeed)), "Chainlink CAPO", outDec, 3600, snap);
+        capo = new ChainlinkCorrelatedAssetsPriceOracle(
+            manager,
+            AggregatorV3Interface(address(clFeed)),
+            address(ratioFeed),
+            "Chainlink CAPO",
+            outDec,
+            3600,
+            snap
+        );
     }
 
     // -----------------------------------------------------------------------------

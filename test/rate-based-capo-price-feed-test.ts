@@ -36,6 +36,7 @@ export async function makeRateBasedCAPO({ priceA, rate, decimalsA = 8 }: { price
         "Rate-Based CAPO",
         FEED_DECIMALS,
         3600,
+        18,
         {
             snapshotRatio: rate,
             snapshotTimestamp: now - 3600,
@@ -71,7 +72,7 @@ describe("Rate-Based CAPO price feed", () => {
         const now = (await ethers.provider.getBlock("latest"))!.timestamp;
 
         await expect(
-            OracleFac.deploy(AddressZero, await agg.getAddress(), await rp.getAddress(), "CAPO", 8, 0, {
+            OracleFac.deploy(AddressZero, await agg.getAddress(), await rp.getAddress(), "CAPO", 8, 0, 18, {
                 snapshotRatio: exp(1, 18),
                 snapshotTimestamp: now - 1,
                 maxYearlyRatioGrowthPercent: 1

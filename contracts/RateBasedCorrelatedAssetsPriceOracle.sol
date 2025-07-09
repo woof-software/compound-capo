@@ -12,6 +12,7 @@ import { IRateProvider } from "./interfaces/IRateProvider.sol";
 contract RateBasedCorrelatedAssetsPriceOracle is PriceCapAdapterBase {
     /// @notice Version of the price feed
     uint public constant VERSION = 1;
+    uint8 internal immutable _ratioDecimals;
 
     constructor(
         address _manager,
@@ -20,15 +21,18 @@ contract RateBasedCorrelatedAssetsPriceOracle is PriceCapAdapterBase {
         string memory _description,
         uint8 _priceFeedDecimals,
         uint48 _minSnapshotDelay,
+        uint8 _rateDecimals,
         PriceCapSnapshot memory _snap
-    ) PriceCapAdapterBase(_manager, _baseAggregator, _rateProvider, _description, _priceFeedDecimals, _minSnapshotDelay, _snap) {}
+    ) PriceCapAdapterBase(_manager, _baseAggregator, _rateProvider, _description, _priceFeedDecimals, _minSnapshotDelay, _snap) {
+        _ratioDecimals = _rateDecimals;
+    }
 
     function getRatio() public view override returns (int256) {
         return int256(IRateProvider(ratioProvider).getRate());
     }
 
     function ratioDecimals() public view override returns (uint8) {
-        return 18;
+        return _ratioDecimals;
     }
 
     /**

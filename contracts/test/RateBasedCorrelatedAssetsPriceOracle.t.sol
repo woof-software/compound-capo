@@ -40,6 +40,7 @@ contract RateBasedCorrelatedAssetsPriceOracleTest is Test {
             "Rate-Based CAPO",
             outDecimals,
             minDelay,
+            18,
             snap
         );
     }
@@ -91,7 +92,7 @@ contract RateBasedCorrelatedAssetsPriceOracleTest is Test {
 
         (, int256 answer, , , ) = capo.latestRoundData();
 
-        uint256 expectedPrice = (uint256(expectedRate) * uint256(priceA)) / 1e18; // делим на 1e18
+        uint256 expectedPrice = (uint256(expectedRate) * uint256(priceA)) / 1e18;
 
         if (outDec > baseDec) expectedPrice *= 10 ** (outDec - baseDec);
         else expectedPrice /= 10 ** (baseDec - outDec);

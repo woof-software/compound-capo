@@ -9,21 +9,45 @@ function exp(i: number, d: Numeric = 0, r: Numeric = 6): bigint {
     return (BigInt(Math.floor(i * 10 ** Number(r))) * 10n ** BigInt(d)) / 10n ** BigInt(r);
 }
 
-async function makeCAPO({ priceA, feedDecimals = 8, outDecimals = OUT_DECIMALS }: { priceA: Numeric; feedDecimals?: Numeric; outDecimals?: number }) {
+async function makeCAPO({
+    priceA,
+    rate = exp(1, 18),
+    feedDecimals = 8,
+    ratioFeedDecimals = 18,
+    outDecimals = OUT_DECIMALS
+}: {
+    priceA: Numeric;
+    rate?: Numeric;
+    feedDecimals?: Numeric;
+    ratioFeedDecimals?: Numeric;
+    outDecimals?: number;
+}) {
     const [manager] = await ethers.getSigners();
+
     const SimplePriceFeed = await ethers.getContractFactory("SimplePriceFeed");
     const OracleFactory = await ethers.getContractFactory("ChainlinkCorrelatedAssetsPriceOracle");
 
     const baseFeed = await SimplePriceFeed.deploy(priceA, feedDecimals);
+
+    const ratioFeed = await SimplePriceFeed.deploy(rate, ratioFeedDecimals);
+
     const now = (await ethers.provider.getBlock("latest"))!.timestamp;
 
-    const oracle = await OracleFactory.deploy(manager.address, await baseFeed.getAddress(), "Chainlink CAPO", outDecimals, 3600, {
-        snapshotRatio: exp(1, 18),
-        snapshotTimestamp: now - 3600,
-        maxYearlyRatioGrowthPercent: exp(0.01, 4)
-    });
+    const oracle = await OracleFactory.deploy(
+        manager.address,
+        await baseFeed.getAddress(),
+        await ratioFeed.getAddress(),
+        "Chainlink CAPO",
+        outDecimals,
+        3600,
+        {
+            snapshotRatio: rate,
+            snapshotTimestamp: now - 3600,
+            maxYearlyRatioGrowthPercent: exp(0.01, 4)
+        }
+    );
 
-    return { oracle, baseFeed, manager };
+    return { oracle, baseFeed, ratioFeed, manager };
 }
 
 describe("Chainlink CAPO price feed", () => {
@@ -32,10 +56,11 @@ describe("Chainlink CAPO price feed", () => {
         const OracleFactory = await ethers.getContractFactory("ChainlinkCorrelatedAssetsPriceOracle");
 
         const feed = await SimplePriceFeed.deploy(exp(1, 8), 8);
+        const ratioFeed = await SimplePriceFeed.deploy(exp(1, 18), 18);
         const now = (await ethers.provider.getBlock("latest"))!.timestamp;
 
         await expect(
-            OracleFactory.deploy(ZERO, await feed.getAddress(), "bad", 8, 3600, {
+            OracleFactory.deploy(ZERO, await feed.getAddress(), await ratioFeed.getAddress(), "bad", 8, 3600, {
                 snapshotRatio: 1,
                 snapshotTimestamp: now - 3600,
                 maxYearlyRatioGrowthPercent: 1
