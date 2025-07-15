@@ -1,0 +1,13 @@
+{
+    "manager": "0x05ED81814BE2D9731c8906133236FFE9C62B013E",
+    "baseAggregator": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+    "lrtOracle": "0x349A73444b1a310BAe67ef67973022020d70020d",
+    "description": "rsETH / USD Oracle",
+    "priceFeedDecimals": 8,
+    "minimumSnapshotDelay": 3600,
+    "priceCapSnapshot": {
+        "snapshotRatio": "0",
+        "snapshotTimestamp": "0",
+        "maxYearlyRatioGrowthPercent": 500
+    }
+}

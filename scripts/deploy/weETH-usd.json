@@ -1,0 +1,14 @@
+{
+    "manager": "0x05ED81814BE2D9731c8906133236FFE9C62B013E",
+    "baseAggregator": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+    "rateProvider": "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee",
+    "description": "rETH / ETH Oracle",
+    "priceFeedDecimals": 8,
+    "minimumSnapshotDelay": 3600,
+    "rateDecimals": 18,
+    "priceCapSnapshot": {
+        "snapshotRatio": "0",
+        "snapshotTimestamp": "0",
+        "maxYearlyRatioGrowthPercent": 500
+    }
+}

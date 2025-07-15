@@ -5,8 +5,11 @@ import { AggregatorV3Interface } from "./interfaces/AggregatorV3Interface.sol";
 import { PriceCapAdapterBase } from "./utils/PriceCapAdapterBase.sol";
 import { IRateProvider } from "./interfaces/IRateProvider.sol";
 
+/**
+ * @title ChainlinkCorrelatedAssetsPriceOracle
+ * @author Compound
+ */
 contract ChainlinkCorrelatedAssetsPriceOracle is PriceCapAdapterBase {
-    uint256 public constant VERSION = 1;
     uint8 internal immutable _ratioDecimals;
 
     constructor(
@@ -21,15 +24,13 @@ contract ChainlinkCorrelatedAssetsPriceOracle is PriceCapAdapterBase {
         _ratioDecimals = AggregatorV3Interface(_ratioProviderAddress).decimals();
     }
 
+    /// @inheritdoc PriceCapAdapterBase
     function getRatio() public view override returns (int256 ratio) {
         (, ratio, , , ) = AggregatorV3Interface(ratioProvider).latestRoundData();
     }
 
+    /// @inheritdoc PriceCapAdapterBase
     function ratioDecimals() public view override returns (uint8) {
         return _ratioDecimals;
-    }
-
-    function version() external pure returns (uint256) {
-        return VERSION;
     }
 }

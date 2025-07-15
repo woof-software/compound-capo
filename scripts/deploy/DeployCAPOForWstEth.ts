@@ -2,23 +2,19 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { ethers } from "hardhat";
-
-import { IERC4626__factory } from "../../typechain-types";
 import dotenv from "dotenv";
 import { readFileSync } from "fs";
 import { join } from "path";
 
 dotenv.config();
 
-const jsonPath = process.env.CAPO_ARGS_PATH;
+const jsonPath = process.env.WSTETH_CAPO_ARGS_PATH;
 if (!jsonPath) {
-    throw new Error("Missing CAPO_ARGS_PATH in .env");
+    throw new Error("Missing WSTETH_CAPO_ARGS_PATH in .env");
 }
 
-// Read and parse JSON file
 const rawJson = JSON.parse(readFileSync(join(__dirname, "..", "..", jsonPath), "utf-8"));
 
-// Parse constructorArgs with BigInt conversion
 const constructorArgs = {
     ...rawJson,
     priceCapSnapshot: {
@@ -30,17 +26,25 @@ const constructorArgs = {
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    console.log("Deploying CAPO from:", deployer.address);
+    console.log("Deploying WstETH CAPO from:", deployer.address);
 
-    const CAPO = await ethers.getContractFactory("ERC4626CorrelatedAssetsPriceOracle");
+    const CAPO = await ethers.getContractFactory("WstETHCorrelatedAssetsPriceOracle");
 
     if (constructorArgs.priceCapSnapshot.snapshotRatio === 0n) {
-        console.log("Fetching current ratio from the ratio provider...");
-        const ERC4626 = IERC4626__factory.connect(constructorArgs.ratioProvider, deployer);
-        const decimals = await ERC4626.decimals();
-        const ratio = await ERC4626.convertToAssets(10n ** BigInt(decimals));
+        console.log("Fetching current ratio from wstETH...");
+        const wstETH = await ethers.getContractAt(["function stEthPerToken() view returns (uint256)"], constructorArgs.wstETH);
+        const stEthPerToken = await wstETH.stEthPerToken();
+
+        const STETH_ETH_FEED = "0x86392dC19c0b719886221c78AB11eb8Cf5c52812";
+        const stEthFeed = await ethers.getContractAt(
+            ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
+            STETH_ETH_FEED
+        );
+        const [, stEthToEth] = await stEthFeed.latestRoundData();
+
+        const ratio = (stEthPerToken * BigInt(stEthToEth)) / 10n ** 18n;
         constructorArgs.priceCapSnapshot.snapshotRatio = ratio;
-        console.log("Current ratio:", ratio.toString());
+        console.log("Current wstETH/ETH ratio:", ratio.toString());
     }
 
     if (constructorArgs.priceCapSnapshot.snapshotTimestamp === 0n) {
@@ -50,13 +54,13 @@ async function main() {
             throw new Error("Failed to fetch the latest block.");
         }
         constructorArgs.priceCapSnapshot.snapshotTimestamp = BigInt(currentBlock.timestamp) - BigInt(constructorArgs.minimumSnapshotDelay);
-        console.log("Current block timestamp:", constructorArgs.priceCapSnapshot.snapshotTimestamp.toString());
+        console.log("Snapshot timestamp:", constructorArgs.priceCapSnapshot.snapshotTimestamp.toString());
     }
 
     const capo = await CAPO.deploy(
         constructorArgs.manager,
         constructorArgs.baseAggregator,
-        constructorArgs.ratioProvider,
+        constructorArgs.wstETH,
         constructorArgs.description,
         constructorArgs.priceFeedDecimals,
         constructorArgs.minimumSnapshotDelay,
@@ -64,7 +68,7 @@ async function main() {
     );
 
     await capo.waitForDeployment();
-    console.log("CAPO deployed to:", await capo.getAddress());
+    console.log("WstETH CAPO deployed to:", await capo.getAddress());
 }
 
 main().catch((error: unknown) => {

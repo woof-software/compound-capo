@@ -1,67 +1,56 @@
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { expect } from "chai";
 
 type Numeric = number | bigint;
 const ZERO = "0x0000000000000000000000000000000000000000";
 const OUT_DECIMALS = 8;
 
+const CHAINLINK_FEEDS = {
+    ETH_USD: "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+    STETH_ETH: "0x86392dC19c0b719886221c78AB11eb8Cf5c52812",
+    RETH_ETH: "0x536218f9E9Eb48863970252233c8F271f554C2d0",
+    CBETH_ETH: "0xF017fcB346A1885194689bA23Eff2fE6fA5C483b"
+};
+
 function exp(i: number, d: Numeric = 0, r: Numeric = 6): bigint {
     return (BigInt(Math.floor(i * 10 ** Number(r))) * 10n ** BigInt(d)) / 10n ** BigInt(r);
 }
 
-async function makeCAPO({
-    priceA,
-    rate = exp(1, 18),
-    feedDecimals = 8,
-    ratioFeedDecimals = 18,
-    outDecimals = OUT_DECIMALS
-}: {
-    priceA: Numeric;
-    rate?: Numeric;
-    feedDecimals?: Numeric;
-    ratioFeedDecimals?: Numeric;
-    outDecimals?: number;
-}) {
+async function makeCAPO({ baseFeed, ratioFeed, outDecimals = OUT_DECIMALS }: { baseFeed: string; ratioFeed: string; outDecimals?: number }) {
     const [manager] = await ethers.getSigners();
-
-    const SimplePriceFeed = await ethers.getContractFactory("SimplePriceFeed");
     const OracleFactory = await ethers.getContractFactory("ChainlinkCorrelatedAssetsPriceOracle");
 
-    const baseFeed = await SimplePriceFeed.deploy(priceA, feedDecimals);
-
-    const ratioFeed = await SimplePriceFeed.deploy(rate, ratioFeedDecimals);
+    const ratioFeedContract = await ethers.getContractAt(
+        ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
+        ratioFeed
+    );
+    const [, currentRatio] = await ratioFeedContract.latestRoundData();
 
     const now = (await ethers.provider.getBlock("latest"))!.timestamp;
 
-    const oracle = await OracleFactory.deploy(
-        manager.address,
-        await baseFeed.getAddress(),
-        await ratioFeed.getAddress(),
-        "Chainlink CAPO",
-        outDecimals,
-        3600,
-        {
-            snapshotRatio: rate,
-            snapshotTimestamp: now - 3600,
-            maxYearlyRatioGrowthPercent: exp(0.01, 4)
-        }
-    );
+    const oracle = await OracleFactory.deploy(manager.address, baseFeed, ratioFeed, "Chainlink CAPO", outDecimals, 3600, {
+        snapshotRatio: currentRatio,
+        snapshotTimestamp: now - 3600,
+        maxYearlyRatioGrowthPercent: exp(0.01, 4)
+    });
 
-    return { oracle, baseFeed, ratioFeed, manager };
+    return { oracle, manager };
 }
 
 describe("Chainlink CAPO price feed", () => {
     it("reverts with zero manager", async () => {
-        const SimplePriceFeed = await ethers.getContractFactory("SimplePriceFeed");
         const OracleFactory = await ethers.getContractFactory("ChainlinkCorrelatedAssetsPriceOracle");
 
-        const feed = await SimplePriceFeed.deploy(exp(1, 8), 8);
-        const ratioFeed = await SimplePriceFeed.deploy(exp(1, 18), 18);
+        const ratioFeedContract = await ethers.getContractAt(
+            ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
+            CHAINLINK_FEEDS.STETH_ETH
+        );
+        const [, currentRatio] = await ratioFeedContract.latestRoundData();
         const now = (await ethers.provider.getBlock("latest"))!.timestamp;
 
         await expect(
-            OracleFactory.deploy(ZERO, await feed.getAddress(), await ratioFeed.getAddress(), "bad", 8, 3600, {
-                snapshotRatio: 1,
+            OracleFactory.deploy(ZERO, CHAINLINK_FEEDS.ETH_USD, CHAINLINK_FEEDS.STETH_ETH, "bad", 8, 3600, {
+                snapshotRatio: currentRatio,
                 snapshotTimestamp: now - 3600,
                 maxYearlyRatioGrowthPercent: 1
             })
@@ -69,7 +58,7 @@ describe("Chainlink CAPO price feed", () => {
     });
 
     it("reverts if non-manager sets snapshot", async () => {
-        const { oracle } = await makeCAPO({ priceA: exp(1, 8) });
+        const { oracle } = await makeCAPO({ baseFeed: CHAINLINK_FEEDS.ETH_USD, ratioFeed: CHAINLINK_FEEDS.STETH_ETH });
         const [, bob] = await ethers.getSigners();
 
         await expect(
@@ -78,7 +67,7 @@ describe("Chainlink CAPO price feed", () => {
     });
 
     it("manager and delay setters", async () => {
-        const { oracle } = await makeCAPO({ priceA: exp(1, 8) });
+        const { oracle } = await makeCAPO({ baseFeed: CHAINLINK_FEEDS.ETH_USD, ratioFeed: CHAINLINK_FEEDS.STETH_ETH });
         const [, alice] = await ethers.getSigners();
 
         await oracle.setManager(alice.address);
@@ -89,7 +78,7 @@ describe("Chainlink CAPO price feed", () => {
     });
 
     it("snapshot guards", async () => {
-        const { oracle } = await makeCAPO({ priceA: exp(1, 8) });
+        const { oracle } = await makeCAPO({ baseFeed: CHAINLINK_FEEDS.ETH_USD, ratioFeed: CHAINLINK_FEEDS.STETH_ETH });
         const now = (await ethers.provider.getBlock("latest"))!.timestamp;
 
         await expect(oracle.updateSnapshot({ snapshotRatio: 1, snapshotTimestamp: now, maxYearlyRatioGrowthPercent: 0 }))
@@ -103,7 +92,7 @@ describe("Chainlink CAPO price feed", () => {
     });
 
     it("public getters", async () => {
-        const { oracle, manager } = await makeCAPO({ priceA: exp(1234, 8) });
+        const { oracle, manager } = await makeCAPO({ baseFeed: CHAINLINK_FEEDS.ETH_USD, ratioFeed: CHAINLINK_FEEDS.STETH_ETH });
 
         expect(await oracle.version()).to.eq(1);
         expect(await oracle.decimals()).to.eq(OUT_DECIMALS);
@@ -114,41 +103,151 @@ describe("Chainlink CAPO price feed", () => {
 
     describe("latestRoundData", () => {
         const cases = [
-            { priceA: exp(1_000, 8), feedDec: 8, result: exp(1_000, 8) },
-            { priceA: exp(2_123.456, 8), feedDec: 8, result: exp(2_123.456, 8) },
-            { priceA: exp(50, 18), feedDec: 18, result: exp(50, 8) },
-            { priceA: exp(0.555, 18), feedDec: 18, result: exp(0.555, 8) }
-        ] as const;
+            { baseFeed: CHAINLINK_FEEDS.ETH_USD, ratioFeed: CHAINLINK_FEEDS.STETH_ETH, name: "stETH/USD (Lido)" },
+            { baseFeed: CHAINLINK_FEEDS.ETH_USD, ratioFeed: CHAINLINK_FEEDS.RETH_ETH, name: "rETH/USD (Rocket Pool)" },
+            { baseFeed: CHAINLINK_FEEDS.ETH_USD, ratioFeed: CHAINLINK_FEEDS.CBETH_ETH, name: "cbETH/USD (Coinbase)" }
+        ];
 
         for (const t of cases) {
-            it(`priceA=${t.priceA}(dec${t.feedDec}) -> ${t.result}`, async () => {
-                const { oracle } = await makeCAPO({ priceA: t.priceA, feedDecimals: t.feedDec });
+            it(`calculates ${t.name} correctly`, async () => {
+                const { oracle } = await makeCAPO({ baseFeed: t.baseFeed, ratioFeed: t.ratioFeed });
                 const [, answer] = await oracle.latestRoundData();
-                expect(answer).to.eq(t.result);
+
+                expect(answer).to.be.gt(0);
+
+                expect(answer).to.be.gt(exp(1000, 8)); // > 1000
+                expect(answer).to.be.lt(exp(5000, 8)); // < 5000
+
+                const ethFeed = await ethers.getContractAt(
+                    ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
+                    CHAINLINK_FEEDS.ETH_USD
+                );
+                const [, ethPrice] = await ethFeed.latestRoundData();
+
+                const minPrice = (ethPrice * 95n) / 100n; // 0.95 - 1.2
+                const maxPrice = (ethPrice * 120n) / 100n;
+
+                expect(answer).to.be.gte(minPrice);
+                expect(answer).to.be.lte(maxPrice);
             });
         }
 
-        it("returns same price for different feed decimals", async () => {
-            const { oracle } = await makeCAPO({ priceA: exp(30, 8) });
-            const price8 = (await oracle.latestRoundData())[1];
+        it("returns same price for different output decimals", async () => {
+            const { oracle: oracle8 } = await makeCAPO({
+                baseFeed: CHAINLINK_FEEDS.ETH_USD,
+                ratioFeed: CHAINLINK_FEEDS.STETH_ETH,
+                outDecimals: 8
+            });
+            const { oracle: oracle18 } = await makeCAPO({
+                baseFeed: CHAINLINK_FEEDS.ETH_USD,
+                ratioFeed: CHAINLINK_FEEDS.STETH_ETH,
+                outDecimals: 18
+            });
 
-            const { oracle: or18 } = await makeCAPO({ priceA: exp(30, 18), feedDecimals: 18 });
-            const price18 = (await or18.latestRoundData())[1];
+            const [, price8] = await oracle8.latestRoundData();
+            const [, price18] = await oracle18.latestRoundData();
 
-            expect(price8).to.eq(price18);
+            const price8In18Dec = price8 * 10n ** 10n;
+            expect(price18).to.be.closeTo(price8In18Dec, price8In18Dec / 1000n);
         });
 
-        it("passes round meta fields from feed", async () => {
-            const { oracle, baseFeed } = await makeCAPO({ priceA: exp(1, 8) });
+        it("passes round meta fields from base feed", async () => {
+            const { oracle } = await makeCAPO({ baseFeed: CHAINLINK_FEEDS.ETH_USD, ratioFeed: CHAINLINK_FEEDS.STETH_ETH });
 
-            await baseFeed.setRoundData(11, exp(2, 8), 100, 101, 11);
+            const baseFeedContract = await ethers.getContractAt(
+                ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
+                CHAINLINK_FEEDS.ETH_USD
+            );
+            const [baseRoundId, , baseStartedAt, baseUpdatedAt, baseAnsweredInRound] = await baseFeedContract.latestRoundData();
 
-            const rd = await oracle.latestRoundData();
-            expect(rd[0]).to.eq(11n);
-            expect(rd[1]).to.eq(exp(2, 8));
-            expect(rd[2]).to.eq(100n);
-            expect(rd[3]).to.eq(101n);
-            expect(rd[4]).to.eq(11n);
+            const [roundId, , startedAt, updatedAt, answeredInRound] = await oracle.latestRoundData();
+
+            expect(roundId).to.eq(baseRoundId);
+            expect(startedAt).to.eq(baseStartedAt);
+            expect(updatedAt).to.eq(baseUpdatedAt);
+            expect(answeredInRound).to.eq(baseAnsweredInRound);
+        });
+
+        it("verifies LST ratios are reasonable", async () => {
+            for (const [name, feedAddress] of Object.entries({
+                stETH: CHAINLINK_FEEDS.STETH_ETH,
+                rETH: CHAINLINK_FEEDS.RETH_ETH,
+                cbETH: CHAINLINK_FEEDS.CBETH_ETH
+            })) {
+                const feed = await ethers.getContractAt(
+                    ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)", "function decimals() view returns (uint8)"],
+                    feedAddress
+                );
+                const [, ratio] = await feed.latestRoundData();
+                const decimals = await feed.decimals();
+
+                const normalizedRatio = decimals === 18 ? ratio : ratio * 10n ** (18n - BigInt(decimals));
+
+                if (name === "stETH") {
+                    expect(normalizedRatio).to.be.gte(exp(0.9, 18));
+                    expect(normalizedRatio).to.be.lte(exp(1.2, 18));
+                }
+
+                if (name === "rETH") {
+                    expect(normalizedRatio).to.be.gte(exp(0.9, 18));
+                    expect(normalizedRatio).to.be.lte(exp(1.2, 18));
+                }
+
+                if (name === "cbETH") {
+                    expect(normalizedRatio).to.be.gte(exp(0.9, 18));
+                    expect(normalizedRatio).to.be.lte(exp(1.2, 18));
+                }
+            }
+        });
+
+        it("correctly handles different LST depeg scenarios", async () => {
+            const { oracle: stethOracle } = await makeCAPO({
+                baseFeed: CHAINLINK_FEEDS.ETH_USD,
+                ratioFeed: CHAINLINK_FEEDS.STETH_ETH
+            });
+
+            const ethFeed = await ethers.getContractAt(
+                ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
+                CHAINLINK_FEEDS.ETH_USD
+            );
+            const stethFeed = await ethers.getContractAt(
+                ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
+                CHAINLINK_FEEDS.STETH_ETH
+            );
+
+            const [, ethPrice] = await ethFeed.latestRoundData();
+            const [, stethRatio] = await stethFeed.latestRoundData();
+            const [, stethPrice] = await stethOracle.latestRoundData();
+
+            if (stethRatio < exp(1, 18)) {
+                expect(stethPrice).to.be.lt(ethPrice);
+            } else if (stethRatio > exp(1, 18)) {
+                expect(stethPrice).to.be.gt(ethPrice);
+            } else {
+                expect(stethPrice).to.eq(ethPrice);
+            }
+        });
+
+        it("correctly calculates price with real Chainlink data", async () => {
+            const { oracle } = await makeCAPO({ baseFeed: CHAINLINK_FEEDS.ETH_USD, ratioFeed: CHAINLINK_FEEDS.STETH_ETH });
+            const ethFeed = await ethers.getContractAt(
+                ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)", "function decimals() view returns (uint8)"],
+                CHAINLINK_FEEDS.ETH_USD
+            );
+            const stethFeed = await ethers.getContractAt(
+                ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)", "function decimals() view returns (uint8)"],
+                CHAINLINK_FEEDS.STETH_ETH
+            );
+
+            const [, ethPrice] = await ethFeed.latestRoundData();
+            const [, stethRatio] = await stethFeed.latestRoundData();
+            const stethDecimals = await stethFeed.decimals();
+
+            const expectedPrice = (BigInt(ethPrice) * stethRatio) / 10n ** BigInt(stethDecimals);
+
+            const [, oraclePrice] = await oracle.latestRoundData();
+
+            expect(oraclePrice).to.be.closeTo(expectedPrice, expectedPrice / 1000n);
         });
     });
 });

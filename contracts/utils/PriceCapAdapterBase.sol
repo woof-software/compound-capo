@@ -52,6 +52,9 @@ abstract contract PriceCapAdapterBase {
         _;
     }
 
+    /// @notice Version of the price feed
+    uint public constant VERSION = 1;
+
     /// @notice Decimal factor for percentage
     uint256 public constant BASIS_POINTS = 1e4;
 
@@ -266,6 +269,14 @@ abstract contract PriceCapAdapterBase {
     /// @notice Returns if the price is currently capped
     function isCapped() public view returns (bool) {
         return getRatio() > _getMaxRatio();
+    }
+
+    /**
+     * @notice Version of the price feed contract
+     * @return The version of the price feed contract
+     **/
+    function version() external pure returns (uint256) {
+        return VERSION;
     }
 
     /// @notice Returns the maximum ratio that can be achieved at the current block.timestamp
