@@ -10,27 +10,39 @@ import { IWstETH } from "./interfaces/IWstETH.sol";
  * @author Compound
  */
 contract WstETHCorrelatedAssetsPriceOracle is PriceCapAdapterBase {
-    address public constant STETH_ETH_FEED = 0x86392dC19c0b719886221c78AB11eb8Cf5c52812;
+    AggregatorV3Interface public immutable marketAggregator;
+    int256 internal immutable _marketPreceison;
+    uint8 internal immutable _ratioDecimals;
 
     constructor(
         address _manager,
         AggregatorV3Interface _baseAggregator,
         address _wstETH,
+        address _marketAggregator,
         string memory _description,
         uint8 _priceFeedDecimals,
         uint48 _minSnapshotDelay,
         PriceCapSnapshot memory _snap
-    ) PriceCapAdapterBase(_manager, _baseAggregator, _wstETH, _description, _priceFeedDecimals, _minSnapshotDelay, _snap) {}
-
-    /// @inheritdoc PriceCapAdapterBase
-    function getRatio() public view override returns (int256) {
-        uint256 stEthPerWstETH = IWstETH(ratioProvider).stEthPerToken();
-        (, int256 stEthToEth, , , ) = AggregatorV3Interface(STETH_ETH_FEED).latestRoundData();
-        return int256((stEthPerWstETH * uint256(stEthToEth)) / 1e18);
+    ) PriceCapAdapterBase(_manager, _baseAggregator, _wstETH, _description, _priceFeedDecimals, _minSnapshotDelay, _snap) {
+        marketAggregator = AggregatorV3Interface(_marketAggregator);
+        _marketPreceison = int256(_marketAggregator == address(0) ? 0 : 10 ** AggregatorV3Interface(_marketAggregator).decimals());
+        _ratioDecimals = 18;
     }
 
     /// @inheritdoc PriceCapAdapterBase
-    function ratioDecimals() public pure override returns (uint8) {
-        return 18;
+    function getRatio() public view override returns (int256) {
+        int256 stEthPerWstETH = int256(IWstETH(ratioProvider).stEthPerToken());
+
+        if (_marketPreceison > 0) {
+            (, int256 stEthToEth, , , ) = marketAggregator.latestRoundData();
+            return (stEthPerWstETH * stEthToEth) / _marketPreceison;
+        } else {
+            return stEthPerWstETH;
+        }
+    }
+
+    /// @inheritdoc PriceCapAdapterBase
+    function ratioDecimals() public view override returns (uint8) {
+        return _ratioDecimals;
     }
 }

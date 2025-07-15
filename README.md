@@ -32,9 +32,9 @@ The capped rate is derived with a linear approximation:
 max_rate(t) = snapshot_rate * (1 + max_yearly_growth * elapsed_time / 1 year)
 ```
 
-This mechanism allows the asset’s price to grow steadily while rejecting values that rise faster than expected, which could indicate manipulation, mispricing, or other anomalies.
+This mechanism allows the asset's price to grow steadily while rejecting values that rise faster than expected, which could indicate manipulation, mispricing, or other anomalies.
 
-If the live ratio exceeds the computed cap, CAPO returns the maximum allowed rate instead. This result is then combined with the base asset’s price to produce a final output.
+If the live ratio exceeds the computed cap, CAPO returns the maximum allowed rate instead. This result is then combined with the base asset's price to produce a final output.
 
 ---
 
@@ -43,6 +43,32 @@ If the live ratio exceeds the computed cap, CAPO returns the maximum allowed rat
 - **Manipulation Resistance**: CAPO helps prevent price manipulation attacks that could inflate collateral value or affect stablecoin issuance.
 - **Predictable Growth Model**: Allows token issuers and protocol integrators to specify clear expectations for asset appreciation over time.
 - **DeFi Compatibility**: Can be used in any system that consumes price feeds—particularly where conservative valuation is preferable.
+
+---
+
+## Oracle Types
+
+CAPO provides several specialized oracle implementations for different types of correlated assets:
+
+### 1. ERC4626CorrelatedAssetsPriceOracle
+
+For ERC-4626 compliant vaults and yield-bearing tokens. Uses the vault's `convertToAssets()` function to get the exchange rate.
+
+### 2. WstETHCorrelatedAssetsPriceOracle
+
+Specifically designed for Lido's wrapped staked ETH (wstETH). Calculates the price using stETH/wstETH ratio and optionally includes stETH/ETH market rate from Chainlink.
+
+### 3. RsETHCorrelatedAssetsPriceOracle
+
+For Kelp DAO's rsETH (Liquid Restaked Token). Gets the rsETH price directly from Kelp's LRT Oracle.
+
+### 4. ChainlinkCorrelatedAssetsPriceOracle
+
+For assets where both base price and ratio are available via Chainlink feeds. Multiplies two Chainlink price feeds to get the final price.
+
+### 5. RateBasedCorrelatedAssetsPriceOracle
+
+For LSTs and other tokens that implement the `IRateProvider` interface (e.g., weETH, rswETH). Optionally supports market rate adjustment for underlying asset depegs.
 
 ---
 
@@ -56,23 +82,24 @@ If the live ratio exceeds the computed cap, CAPO returns the maximum allowed rat
 
 ## Supported Markets
 
-The table below outlines the current and planned markets where CAPO may be integrated, along with the associated collateral types. The "CAPO" column indicates whether the asset is configured to use CAPO’s price capping mechanism.
+The table below outlines the current and planned markets where CAPO may be integrated, along with the associated collateral types and oracle implementations.
 
 **Note**: CAPO is under active development and not yet deployed. This list is for informational purposes only and will be updated as integration progresses.
 
-At this stage, CAPO is planned only for ERC-4626 yield vaults. Support for liquid staking tokens (LSTs) and liquid restaking tokens (LRTs) is under consideration for future phases.
-
-| Network  | Market  | Collateral | Type                   | CAPO |
-| -------- | ------- | ---------- | ---------------------- | ---- |
-| Mainnet  | cWETHv3 | cbETH      | Liquid Staking Token   | ❌   |
-| Mainnet  | cWETHv3 | rsETH      | Liquid Restaking Token | ❌   |
-| Mainnet  | cUSDTv3 | wUSDM      | ERC-4626 Yield Vault   | ✅   |
-| Mainnet  | cUSDTv3 | sFRAX      | ERC-4626 Yield Vault   | ✅   |
-| Mainnet  | cUSDTv3 | sUSDS      | ERC-4626 Yield Vault   | ✅   |
-| Optimism | cUSDCv3 | wUSDM      | ERC-4626 Yield Vault   | ✅   |
-| Arbitrum | cUSDCv3 | wUSDM      | ERC-4626 Yield Vault   | ✅   |
-| Base     | cAEROv3 | wstETH     | Liquid Staking Token   | ❌   |
-| Mantle   | cUSDev3 | mETH       | Liquid Staking Token   | ❌   |
+| Network  | Market  | Collateral | Type                   | CAPO | Oracle Type                          |
+| -------- | ------- | ---------- | ---------------------- | ---- | ------------------------------------ |
+| Mainnet  | cWETHv3 | cbETH      | Liquid Staking Token   | ✅   | ChainlinkCorrelatedAssetsPriceOracle |
+| Mainnet  | cWETHv3 | rsETH      | Liquid Restaking Token | ✅   | RsETHCorrelatedAssetsPriceOracle     |
+| Mainnet  | cWETHv3 | wstETH     | Liquid Staking Token   | ✅   | WstETHCorrelatedAssetsPriceOracle    |
+| Mainnet  | cWETHv3 | rswETH     | Liquid Staking Token   | ✅   | RateBasedCorrelatedAssetsPriceOracle |
+| Mainnet  | cWETHv3 | weETH      | Liquid Restaking Token | ✅   | RateBasedCorrelatedAssetsPriceOracle |
+| Mainnet  | cUSDTv3 | wUSDM      | ERC-4626 Yield Vault   | ✅   | ERC4626CorrelatedAssetsPriceOracle   |
+| Mainnet  | cUSDTv3 | sFRAX      | ERC-4626 Yield Vault   | ✅   | ERC4626CorrelatedAssetsPriceOracle   |
+| Mainnet  | cUSDTv3 | sUSDS      | ERC-4626 Yield Vault   | ✅   | ERC4626CorrelatedAssetsPriceOracle   |
+| Optimism | cUSDCv3 | wUSDM      | ERC-4626 Yield Vault   | ✅   | ERC4626CorrelatedAssetsPriceOracle   |
+| Arbitrum | cUSDCv3 | wUSDM      | ERC-4626 Yield Vault   | ✅   | ERC4626CorrelatedAssetsPriceOracle   |
+| Base     | cAEROv3 | wstETH     | Liquid Staking Token   | ✅   | WstETHCorrelatedAssetsPriceOracle    |
+| Mantle   | cUSDev3 | mETH       | Liquid Staking Token   | ✅   | ChainlinkCorrelatedAssetsPriceOracle |
 
 ---
 

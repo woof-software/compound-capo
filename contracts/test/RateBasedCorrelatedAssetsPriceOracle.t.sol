@@ -37,6 +37,7 @@ contract RateBasedCorrelatedAssetsPriceOracleTest is Test {
             manager,
             AggregatorV3Interface(address(baseFeed)),
             address(rateProv),
+            address(0),
             "Rate-Based CAPO",
             outDecimals,
             minDelay,
