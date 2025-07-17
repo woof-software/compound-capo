@@ -26,7 +26,7 @@ abstract contract MarketPriceAdapter {
         }
 
         (, int256 marketRate, , , ) = marketAggregator.latestRoundData();
-        if (marketRate == 0) {
+        if (marketRate <= 0) {
             return 0;
         }
 
