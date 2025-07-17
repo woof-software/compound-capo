@@ -20,9 +20,9 @@ contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
         manager = makeAddr("manager");
     }
 
-    function _deploy(uint8 baseDec, uint8 wstDec, uint8 outDec, int256 priceA, int256 ratio, uint48 minDelay, uint32 maxGrowth) internal {
+    function _deploy(uint8 baseDec, uint8 outDec, int256 priceA, int256 ratio, uint48 minDelay, uint32 maxGrowth) internal {
         baseFeed = new SimplePriceFeed(priceA, baseDec);
-        wsteth = new MockWstETH(wstDec, uint256(ratio));
+        wsteth = new MockWstETH(uint256(ratio));
 
         vm.warp(block.timestamp + minDelay * 2);
         vm.roll(block.number + 1);
@@ -47,50 +47,30 @@ contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
 
     function _boundInputs(
         uint8 baseDec,
-        uint8 wstDec,
         uint8 outDec,
         int256 priceA,
         int256 ratio,
         uint48 minDelay,
         uint32 maxGrowth,
         uint256 dt
-    ) internal pure returns (uint8, uint8, uint8, int256, int256, uint48, uint32, uint256) {
+    ) internal pure returns (uint8, uint8, int256, int256, uint48, uint32, uint256) {
         baseDec = uint8(bound(baseDec, 6, 18));
-        wstDec = uint8(bound(wstDec, 6, 18));
         outDec = uint8(bound(outDec, 6, 18));
 
         priceA = int256(bound(uint256(priceA), 10 ** (baseDec - 2), 100_000 * 10 ** baseDec));
-        ratio = int256(bound(uint256(ratio), 10 ** (wstDec - 2), 100_000 * 10 ** wstDec));
+        ratio = int256(bound(uint256(ratio), 10 ** (18 - 2), 100_000 * 10 ** 18));
 
         minDelay = uint48(bound(minDelay, 1 hours, 10 days));
         maxGrowth = uint32(bound(maxGrowth, 100, 2_000_00)); // 1-2000 %
         dt = bound(dt, 60 days, 365 days * 3);
 
-        return (baseDec, wstDec, outDec, priceA, ratio, minDelay, maxGrowth, dt);
+        return (baseDec, outDec, priceA, ratio, minDelay, maxGrowth, dt);
     }
 
-    function testFuzz_exactGrowth(
-        uint8 baseDec,
-        uint8 wstDec,
-        uint8 outDec,
-        int256 priceA,
-        int256 ratio,
-        uint48 minDelay,
-        uint32 maxGrowth,
-        uint256 dt
-    ) public {
-        (baseDec, wstDec, outDec, priceA, ratio, minDelay, maxGrowth, dt) = _boundInputs(
-            baseDec,
-            wstDec,
-            outDec,
-            priceA,
-            ratio,
-            minDelay,
-            maxGrowth,
-            dt
-        );
+    function testFuzz_exactGrowth(uint8 baseDec, uint8 outDec, int256 priceA, int256 ratio, uint48 minDelay, uint32 maxGrowth, uint256 dt) public {
+        (baseDec, outDec, priceA, ratio, minDelay, maxGrowth, dt) = _boundInputs(baseDec, outDec, priceA, ratio, minDelay, maxGrowth, dt);
 
-        _deploy(baseDec, wstDec, outDec, priceA, ratio, minDelay, maxGrowth);
+        _deploy(baseDec, outDec, priceA, ratio, minDelay, maxGrowth);
 
         vm.warp(block.timestamp + dt);
         vm.roll(block.number + 1);
@@ -108,28 +88,10 @@ contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
         assertTrue(!capo.isCapped());
     }
 
-    function testFuzz_growthExceeds(
-        uint8 baseDec,
-        uint8 wstDec,
-        uint8 outDec,
-        int256 priceA,
-        int256 ratio,
-        uint48 minDelay,
-        uint32 maxGrowth,
-        uint256 dt
-    ) public {
-        (baseDec, wstDec, outDec, priceA, ratio, minDelay, maxGrowth, dt) = _boundInputs(
-            baseDec,
-            wstDec,
-            outDec,
-            priceA,
-            ratio,
-            minDelay,
-            maxGrowth,
-            dt
-        );
+    function testFuzz_growthExceeds(uint8 baseDec, uint8 outDec, int256 priceA, int256 ratio, uint48 minDelay, uint32 maxGrowth, uint256 dt) public {
+        (baseDec, outDec, priceA, ratio, minDelay, maxGrowth, dt) = _boundInputs(baseDec, outDec, priceA, ratio, minDelay, maxGrowth, dt);
 
-        _deploy(baseDec, wstDec, outDec, priceA, ratio, minDelay, maxGrowth);
+        _deploy(baseDec, outDec, priceA, ratio, minDelay, maxGrowth);
 
         vm.warp(block.timestamp + dt);
         vm.roll(block.number + 1);
@@ -149,7 +111,6 @@ contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
 
     function testFuzz_growthNotExceeds(
         uint8 baseDec,
-        uint8 wstDec,
         uint8 outDec,
         int256 priceA,
         int256 ratio,
@@ -157,18 +118,9 @@ contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
         uint32 maxGrowth,
         uint256 dt
     ) public {
-        (baseDec, wstDec, outDec, priceA, ratio, minDelay, maxGrowth, dt) = _boundInputs(
-            baseDec,
-            wstDec,
-            outDec,
-            priceA,
-            ratio,
-            minDelay,
-            maxGrowth,
-            dt
-        );
+        (baseDec, outDec, priceA, ratio, minDelay, maxGrowth, dt) = _boundInputs(baseDec, outDec, priceA, ratio, minDelay, maxGrowth, dt);
 
-        _deploy(baseDec, wstDec, outDec, priceA, ratio, minDelay, maxGrowth);
+        _deploy(baseDec, outDec, priceA, ratio, minDelay, maxGrowth);
 
         vm.warp(block.timestamp + dt);
         vm.roll(block.number + 1);

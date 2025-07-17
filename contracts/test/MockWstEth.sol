@@ -9,12 +9,12 @@ contract MockWstETH is IWstETHMock {
     uint256 private _rate;
     uint8 public immutable decimals;
 
-    constructor(uint8 _dec, uint256 initialRate) {
-        decimals = _dec;
+    constructor(uint256 initialRate) {
+        decimals = 18;
         _rate = initialRate;
     }
 
-    function tokensPerStEth() external view returns (uint256) {
+    function stEthPerToken() external view returns (uint256) {
         return _rate;
     }
 
