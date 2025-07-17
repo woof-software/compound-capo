@@ -68,7 +68,7 @@ For assets where both base price and ratio are available via Chainlink feeds. Mu
 
 ### 5. RateBasedCorrelatedAssetsPriceOracle
 
-For LSTs and other tokens that implement the `IRateProvider` interface (e.g., weETH, rswETH). Optionally supports market rate adjustment for underlying asset depegs.
+For LSTs and other tokens that implement the `IRateProvider` interface (e.g., weETH, rswETH). Optionally supports market rate adjustment from Chainlink for underlying asset depegs.
 
 ---
 

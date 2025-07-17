@@ -1,0 +1,9 @@
+[
+    "constructor(int256 answer_, uint8 decimals_)",
+    "function decimals() view returns (uint8)",
+    "function description() view returns (string)",
+    "function getRoundData(uint80 roundId_) view returns (uint80, int256, uint256, uint256, uint80)",
+    "function latestRoundData() view returns (uint80, int256, uint256, uint256, uint80)",
+    "function setRoundData(uint80 roundId_, int256 answer_, uint256 startedAt_, uint256 updatedAt_, uint80 answeredInRound_)",
+    "function version() view returns (uint256)"
+]

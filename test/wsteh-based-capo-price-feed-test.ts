@@ -73,7 +73,6 @@ describe("wstETH CAPO price feed common rate", () => {
                 MAINNET_CONTRACTS.ETH_USD
             );
             const [, ethPrice] = await ethFeed.latestRoundData();
-            console.log("wstETH price:", price.toString());
             expect(price).to.be.gt(ethPrice);
             expect(price).to.be.lt((ethPrice * 130n) / 100n);
         });
@@ -172,7 +171,6 @@ describe("wstETH CAPO price feed market rate", () => {
                 MAINNET_CONTRACTS.ETH_USD
             );
             const [, ethPrice] = await ethFeed.latestRoundData();
-            console.log("wstETH price:", price.toString());
             expect(price).to.be.gt(ethPrice);
             expect(price).to.be.lt((ethPrice * 130n) / 100n);
         });

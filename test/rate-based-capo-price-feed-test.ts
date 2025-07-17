@@ -86,7 +86,6 @@ describe("Rate-Based CAPO price feed common rate", () => {
         it(`weETH/USD price with real data`, async () => {
             const { CapoPriceFeed } = await makeRateBasedCAPO();
             const [, price] = await CapoPriceFeed.latestRoundData();
-            console.log("weETH price:", price.toString());
             const ethFeed = await ethers.getContractAt(
                 ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
                 MAINNET_CONTRACTS.ETH_USD
@@ -163,7 +162,6 @@ describe("Rate-Based CAPO price feed market rate", () => {
                 MAINNET_CONTRACTS.ETH_USD
             );
             const [, ethPrice] = await ethFeed.latestRoundData();
-            console.log("weETH price:", price.toString());
             expect(price).to.be.gt(ethPrice);
             expect(price).to.be.lt((ethPrice * 120n) / 100n);
         });

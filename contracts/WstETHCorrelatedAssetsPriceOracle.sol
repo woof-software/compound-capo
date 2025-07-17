@@ -2,6 +2,7 @@
 pragma solidity 0.8.15;
 
 import { AggregatorV3Interface } from "./interfaces/AggregatorV3Interface.sol";
+import { MarketPriceAdapter } from "./utils/MarketPriceAdapter.sol";
 import { PriceCapAdapterBase } from "./utils/PriceCapAdapterBase.sol";
 import { IWstETH } from "./interfaces/IWstETH.sol";
 
@@ -9,9 +10,7 @@ import { IWstETH } from "./interfaces/IWstETH.sol";
  * @title WstETHCorrelatedAssetsPriceOracle
  * @author Compound
  */
-contract WstETHCorrelatedAssetsPriceOracle is PriceCapAdapterBase {
-    AggregatorV3Interface public immutable marketAggregator;
-    int256 internal immutable _marketPreceison;
+contract WstETHCorrelatedAssetsPriceOracle is PriceCapAdapterBase, MarketPriceAdapter {
     uint8 internal immutable _ratioDecimals;
 
     constructor(
@@ -23,25 +22,20 @@ contract WstETHCorrelatedAssetsPriceOracle is PriceCapAdapterBase {
         uint8 _priceFeedDecimals,
         uint48 _minSnapshotDelay,
         PriceCapSnapshot memory _snap
-    ) PriceCapAdapterBase(_manager, _baseAggregator, _wstETH, _description, _priceFeedDecimals, _minSnapshotDelay, _snap) {
-        marketAggregator = AggregatorV3Interface(_marketAggregator);
-        _marketPreceison = int256(_marketAggregator == address(0) ? 0 : 10 ** AggregatorV3Interface(_marketAggregator).decimals());
+    )
+        MarketPriceAdapter(_marketAggregator)
+        PriceCapAdapterBase(_manager, _baseAggregator, _wstETH, _description, _priceFeedDecimals, _minSnapshotDelay, _snap)
+    {
         _ratioDecimals = 18;
     }
 
-    /// @inheritdoc PriceCapAdapterBase
+    ///  @inheritdoc PriceCapAdapterBase
     function getRatio() public view override returns (int256) {
-        int256 stEthPerWstETH = int256(IWstETH(ratioProvider).stEthPerToken());
-
-        if (_marketPreceison > 0) {
-            (, int256 stEthToEth, , , ) = marketAggregator.latestRoundData();
-            return (stEthPerWstETH * stEthToEth) / _marketPreceison;
-        } else {
-            return stEthPerWstETH;
-        }
+        int256 ratio = int256(IWstETH(ratioProvider).stEthPerToken());
+        return _convertWithMarketRate(ratio);
     }
 
-    /// @inheritdoc PriceCapAdapterBase
+    ///  @inheritdoc PriceCapAdapterBase
     function ratioDecimals() public view override returns (uint8) {
         return _ratioDecimals;
     }

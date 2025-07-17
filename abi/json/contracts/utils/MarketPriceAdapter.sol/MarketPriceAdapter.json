@@ -1,0 +1,15 @@
+[
+    {
+        "inputs": [],
+        "name": "marketAggregator",
+        "outputs": [
+            {
+                "internalType": "contract AggregatorV3Interface",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]

@@ -1,0 +1,5 @@
+[
+    "constructor(uint256)",
+    "function getRate() view returns (uint256)",
+    "function setRate(uint256)"
+]

@@ -1,0 +1,26 @@
+# Solidity API
+
+## RsETHCorrelatedAssetsPriceOracle
+
+### constructor
+
+```solidity
+constructor(address _manager, contract AggregatorV3Interface _baseAggregator, address _lrtOracle, string _description, uint8 _priceFeedDecimals, uint48 _minSnapshotDelay, struct PriceCapAdapterBase.PriceCapSnapshot _snap) public
+```
+
+### getRatio
+
+```solidity
+function getRatio() public view returns (int256)
+```
+
+Returns the current exchange ratio of lst to the underlying(base) asset
+
+### ratioDecimals
+
+```solidity
+function ratioDecimals() public pure returns (uint8)
+```
+
+Returns the number of decimals for (lst asset / underlying asset) ratio
+

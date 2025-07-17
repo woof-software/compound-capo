@@ -1,0 +1,9 @@
+[
+    "constructor(int256 answer_, uint8 decimals_, address _asset)",
+    "function asset() view returns (address)",
+    "function convertToAssets(uint256) view returns (uint256)",
+    "function decimals() view returns (uint8)",
+    "function description() view returns (string)",
+    "function setRoundData(int256 answer_)",
+    "function version() view returns (uint256)"
+]
