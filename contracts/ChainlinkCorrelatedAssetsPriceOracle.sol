@@ -7,7 +7,7 @@ import { IRateProvider } from "./interfaces/IRateProvider.sol";
 
 /**
  * @title ChainlinkCorrelatedAssetsPriceOracle
- * @author Compound
+ * @author WOOF!
  */
 contract ChainlinkCorrelatedAssetsPriceOracle is PriceCapAdapterBase {
     uint8 internal immutable _ratioDecimals;

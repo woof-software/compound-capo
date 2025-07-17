@@ -5,7 +5,7 @@ import { IERC20 } from "../interfaces/IERC20.sol";
 
 /**
  * @title MockERC20
- * @author Compound
+ * @author WOOF!
  * @notice A mock ERC20 token for testing purposes.
  */
 contract MockERC20 is IERC20 {

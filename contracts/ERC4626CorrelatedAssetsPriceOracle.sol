@@ -7,7 +7,7 @@ import { PriceCapAdapterBase } from "./utils/PriceCapAdapterBase.sol";
 
 /**
  * @title ERC4626CorrelatedAssetsPriceOracle
- * @author Compound
+ * @author WOOF!
  */
 contract ERC4626CorrelatedAssetsPriceOracle is PriceCapAdapterBase {
     uint8 internal _ratioDecimals;

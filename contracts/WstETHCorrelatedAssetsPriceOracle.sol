@@ -8,7 +8,7 @@ import { IWstETH } from "./interfaces/IWstETH.sol";
 
 /**
  * @title WstETHCorrelatedAssetsPriceOracle
- * @author Compound
+ * @author WOOF!
  */
 contract WstETHCorrelatedAssetsPriceOracle is PriceCapAdapterBase, MarketPriceAdapter {
     uint8 internal immutable _ratioDecimals;
