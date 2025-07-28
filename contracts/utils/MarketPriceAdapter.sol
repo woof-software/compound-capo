@@ -15,9 +15,9 @@ abstract contract MarketPriceAdapter {
     /// @dev If zero, market rate is skipped and raw ratio is used (1:1 mode).
     int256 internal immutable _marketPrecision;
 
-    constructor(address _marketAggregator) {
-        marketAggregator = AggregatorV3Interface(_marketAggregator);
-        _marketPrecision = int256(_marketAggregator == address(0) ? 0 : 10 ** AggregatorV3Interface(_marketAggregator).decimals());
+    constructor(AggregatorV3Interface _marketAggregator) {
+        marketAggregator = _marketAggregator;
+        _marketPrecision = int256(address(_marketAggregator) == address(0) ? 0 : 10 ** _marketAggregator.decimals());
     }
 
     /// @notice Converts the raw ratio using the market rate if available.

@@ -37,7 +37,7 @@ contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
             manager,
             AggregatorV3Interface(address(baseFeed)),
             address(wsteth),
-            address(0),
+            AggregatorV3Interface(address(0)),
             "wstETH CAPO",
             outDec,
             minDelay,

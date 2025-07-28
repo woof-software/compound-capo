@@ -27,7 +27,7 @@ contract RateBasedCorrelatedAssetsPriceOracle is PriceCapAdapterBase, MarketPric
         address _manager,
         AggregatorV3Interface _baseAggregatorAddress,
         address _ratioProviderAddress,
-        address _marketAggregator,
+        AggregatorV3Interface _marketAggregator,
         string memory _description,
         uint8 _priceFeedDecimals,
         uint48 _minimumSnapshotDelay,

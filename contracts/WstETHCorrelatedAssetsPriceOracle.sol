@@ -27,7 +27,7 @@ contract WstETHCorrelatedAssetsPriceOracle is PriceCapAdapterBase, MarketPriceAd
         address _manager,
         AggregatorV3Interface _baseAggregatorAddress,
         address _wstETH,
-        address _marketAggregator,
+        AggregatorV3Interface _marketAggregator,
         string memory _description,
         uint8 _priceFeedDecimals,
         uint48 _minimumSnapshotDelay,
