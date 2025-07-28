@@ -272,7 +272,7 @@ abstract contract PriceCapAdapterBase {
         maxRatioGrowthPerSecond = _maxRatioGrowthPerSecond;
 
         // if the ratio on the current growth speed can overflow less than in a 3 years, revert
-        if (uint256(snapshotRatio) + uint256(_maxRatioGrowthPerSecond * SECONDS_PER_YEAR * 3) / GROWTH_RATIO_SCALE > type(uint128).max) {
+        if (snapshotRatio + uint256(_maxRatioGrowthPerSecond * SECONDS_PER_YEAR * 3) / GROWTH_RATIO_SCALE > type(uint128).max) {
             revert SnapshotCloseToOverflow(priceCapParams.snapshotRatio, priceCapParams.maxYearlyRatioGrowthPercent);
         }
 
