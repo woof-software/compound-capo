@@ -3,7 +3,9 @@ pragma solidity 0.8.15;
 
 import { AggregatorV3Interface } from "../interfaces/AggregatorV3Interface.sol";
 
-/// @notice Base contract for price oracles that optionally adjust an LST-native ratio using an external market price feed.
+/**@notice Base contract for price oracles that optionally adjust an LST-native ratio using an external market price feed.
+ * @custom:security-contact dmitriy@woof.software
+ */
 abstract contract MarketPriceAdapter {
     /// @notice External price feed for LST-to-asset market rate.
     /// @dev If zero, assumes 1:1 ratio between LST and asset.

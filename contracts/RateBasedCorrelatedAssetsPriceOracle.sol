@@ -9,6 +9,7 @@ import { IRateProvider } from "./interfaces/IRateProvider.sol";
 /**
  * @title RateBasedCorrelatedAssetsPriceOracle
  * @author WOOF!
+ * @custom:security-contact dmitriy@woof.software
  */
 contract RateBasedCorrelatedAssetsPriceOracle is PriceCapAdapterBase, MarketPriceAdapter {
     uint8 internal immutable _ratioDecimals;

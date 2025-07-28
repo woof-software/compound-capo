@@ -6,6 +6,7 @@ import { AggregatorV3Interface } from "../interfaces/AggregatorV3Interface.sol";
 /**
  * @title PriceCapAdapterBase
  * @author WOOF!
+ * @custom:security-contact dmitriy@woof.software
  * @notice Price adapter to cap the price of the underlying asset.
  */
 abstract contract PriceCapAdapterBase {

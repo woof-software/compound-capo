@@ -8,6 +8,7 @@ import { ILRTOracle } from "./interfaces/ILRTOracle.sol";
 /**
  * @title RsETHCorrelatedAssetsPriceOracle
  * @author WOOF!
+ * @custom:security-contact dmitriy@woof.software
  */
 contract RsETHCorrelatedAssetsPriceOracle is PriceCapAdapterBase {
     constructor(

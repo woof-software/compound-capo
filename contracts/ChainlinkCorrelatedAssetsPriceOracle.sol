@@ -7,6 +7,7 @@ import { PriceCapAdapterBase } from "./utils/PriceCapAdapterBase.sol";
 /**
  * @title ChainlinkCorrelatedAssetsPriceOracle
  * @author WOOF!
+ * @custom:security-contact dmitriy@woof.software
  */
 contract ChainlinkCorrelatedAssetsPriceOracle is PriceCapAdapterBase {
     uint8 internal immutable _ratioDecimals;
