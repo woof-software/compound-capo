@@ -265,20 +265,21 @@ abstract contract PriceCapAdapterBase {
         snapshotTimestamp = priceCapParams.snapshotTimestamp;
         maxYearlyRatioGrowthPercent = priceCapParams.maxYearlyRatioGrowthPercent;
 
-        maxRatioGrowthPerSecond =
-            (uint256(priceCapParams.snapshotRatio) * priceCapParams.maxYearlyRatioGrowthPercent * GROWTH_RATIO_SCALE) /
+        uint256 _maxRatioGrowthPerSecond = (uint256(priceCapParams.snapshotRatio) * priceCapParams.maxYearlyRatioGrowthPercent * GROWTH_RATIO_SCALE) /
             BASIS_POINTS /
             SECONDS_PER_YEAR;
 
+        maxRatioGrowthPerSecond = _maxRatioGrowthPerSecond;
+
         // if the ratio on the current growth speed can overflow less than in a 3 years, revert
-        if (uint256(snapshotRatio) + uint256(maxRatioGrowthPerSecond * SECONDS_PER_YEAR * 3) / GROWTH_RATIO_SCALE > type(uint128).max) {
+        if (uint256(snapshotRatio) + uint256(_maxRatioGrowthPerSecond * SECONDS_PER_YEAR * 3) / GROWTH_RATIO_SCALE > type(uint128).max) {
             revert SnapshotCloseToOverflow(priceCapParams.snapshotRatio, priceCapParams.maxYearlyRatioGrowthPercent);
         }
 
         emit NewPriceCapSnapshot(
             priceCapParams.snapshotRatio,
             priceCapParams.snapshotTimestamp,
-            maxRatioGrowthPerSecond,
+            _maxRatioGrowthPerSecond,
             priceCapParams.maxYearlyRatioGrowthPercent
         );
     }
