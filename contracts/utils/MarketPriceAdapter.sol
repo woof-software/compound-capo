@@ -2,7 +2,6 @@
 pragma solidity 0.8.15;
 
 import { AggregatorV3Interface } from "../interfaces/AggregatorV3Interface.sol";
-import { PriceCapAdapterBase } from "../utils/PriceCapAdapterBase.sol";
 
 /// @notice Base contract for price oracles that optionally adjust an LST-native ratio using an external market price feed.
 abstract contract MarketPriceAdapter {

@@ -3,7 +3,6 @@ pragma solidity 0.8.15;
 
 import { AggregatorV3Interface } from "./interfaces/AggregatorV3Interface.sol";
 import { PriceCapAdapterBase } from "./utils/PriceCapAdapterBase.sol";
-import { IRateProvider } from "./interfaces/IRateProvider.sol";
 
 /**
  * @title ChainlinkCorrelatedAssetsPriceOracle
