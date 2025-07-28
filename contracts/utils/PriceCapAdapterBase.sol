@@ -235,7 +235,7 @@ abstract contract PriceCapAdapterBase {
         }
 
         // new snapshot timestamp should be gt than stored one, but not gt than timestamp of the current block
-        if (snapshotTimestamp > priceCapParams.snapshotTimestamp || priceCapParams.snapshotTimestamp > block.timestamp - minimumSnapshotDelay) {
+        if (snapshotTimestamp >= priceCapParams.snapshotTimestamp || priceCapParams.snapshotTimestamp > block.timestamp - minimumSnapshotDelay) {
             revert InvalidRatioTimestamp(priceCapParams.snapshotTimestamp);
         }
         snapshotRatio = priceCapParams.snapshotRatio;
