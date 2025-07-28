@@ -14,18 +14,27 @@ import { IWstETH } from "./interfaces/IWstETH.sol";
 contract WstETHCorrelatedAssetsPriceOracle is PriceCapAdapterBase, MarketPriceAdapter {
     uint8 internal immutable _ratioDecimals;
 
+    /**
+     * @param _manager address of the manager
+     * @param _baseAggregatorAddress address of the base aggregator
+     * @param _wstETH address of the WstETH contract
+     * @param _description description of the pair
+     * @param _priceFeedDecimals number of decimals for the price feed
+     * @param _minimumSnapshotDelay minimum time that should have passed from the snapshot timestamp to the current block.timestamp
+     * @param _priceCapSnapshot parameters to set price cap
+     */
     constructor(
         address _manager,
-        AggregatorV3Interface _baseAggregator,
+        AggregatorV3Interface _baseAggregatorAddress,
         address _wstETH,
         address _marketAggregator,
         string memory _description,
         uint8 _priceFeedDecimals,
-        uint48 _minSnapshotDelay,
-        PriceCapSnapshot memory _snap
+        uint48 _minimumSnapshotDelay,
+        PriceCapSnapshot memory _priceCapSnapshot
     )
         MarketPriceAdapter(_marketAggregator)
-        PriceCapAdapterBase(_manager, _baseAggregator, _wstETH, _description, _priceFeedDecimals, _minSnapshotDelay, _snap)
+        PriceCapAdapterBase(_manager, _baseAggregatorAddress, _wstETH, _description, _priceFeedDecimals, _minimumSnapshotDelay, _priceCapSnapshot)
     {
         _ratioDecimals = 18;
     }
