@@ -209,6 +209,28 @@ abstract contract PriceCapAdapterBase {
     }
 
     /**
+     * @notice Version of the price feed contract
+     * @return The version of the price feed contract
+     **/
+    function version() external pure returns (uint256) {
+        return VERSION;
+    }
+
+    /// @notice Returns the current exchange ratio of lst to the underlying(base) asset
+    /// @return The current exchange ratio of lst to the underlying asset
+    function getRatio() public view virtual returns (int256);
+
+    /// @notice Returns the number of decimals for (lst asset / underlying asset) ratio
+    /// @return The number of decimals for (lst asset / underlying asset) ratio
+    function ratioDecimals() public view virtual returns (uint8);
+
+    /// @notice Returns if the price is currently capped
+    /// @return True if the price is capped, false otherwise
+    function isCapped() public view returns (bool) {
+        return getRatio() > _getMaxRatio();
+    }
+
+    /**
      * @notice Scales the price based on the rescale factor
      * @param price Price to scale
      * @return scaled Price
@@ -259,28 +281,6 @@ abstract contract PriceCapAdapterBase {
             maxRatioGrowthPerSecond,
             priceCapParams.maxYearlyRatioGrowthPercent
         );
-    }
-
-    /// @notice Returns the current exchange ratio of lst to the underlying(base) asset
-    /// @return The current exchange ratio of lst to the underlying asset
-    function getRatio() public view virtual returns (int256);
-
-    /// @notice Returns the number of decimals for (lst asset / underlying asset) ratio
-    /// @return The number of decimals for (lst asset / underlying asset) ratio
-    function ratioDecimals() public view virtual returns (uint8);
-
-    /// @notice Returns if the price is currently capped
-    /// @return True if the price is capped, false otherwise
-    function isCapped() public view returns (bool) {
-        return getRatio() > _getMaxRatio();
-    }
-
-    /**
-     * @notice Version of the price feed contract
-     * @return The version of the price feed contract
-     **/
-    function version() external pure returns (uint256) {
-        return VERSION;
     }
 
     /// @notice Returns the maximum ratio that can be achieved at the current block.timestamp
