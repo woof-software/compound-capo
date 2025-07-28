@@ -54,7 +54,7 @@ abstract contract PriceCapAdapterBase {
     }
 
     /// @notice Version of the price feed
-    uint public constant VERSION = 1;
+    uint256 public constant VERSION = 1;
 
     /// @notice Decimal factor for percentage
     uint256 public constant BASIS_POINTS = 1e4;
