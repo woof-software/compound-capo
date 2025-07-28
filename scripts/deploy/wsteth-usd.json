@@ -1,5 +1,5 @@
 {
-    "manager": "0x05ED81814BE2D9731c8906133236FFE9C62B013E",
+    "manager": "0x1841E5AF06176725910988205cD03Ad0621B903a",
     "baseAggregator": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
     "wstETH": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
     "description": "wstETH / USD Oracle",
@@ -11,3 +11,4 @@
         "maxYearlyRatioGrowthPercent": 500
     }
 }
+0x0000000000000000000000000000000000000000

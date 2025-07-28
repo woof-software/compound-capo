@@ -261,12 +261,15 @@ abstract contract PriceCapAdapterBase {
     }
 
     /// @notice Returns the current exchange ratio of lst to the underlying(base) asset
+    /// @return The current exchange ratio of lst to the underlying asset
     function getRatio() public view virtual returns (int256);
 
     /// @notice Returns the number of decimals for (lst asset / underlying asset) ratio
+    /// @return The number of decimals for (lst asset / underlying asset) ratio
     function ratioDecimals() public view virtual returns (uint8);
 
     /// @notice Returns if the price is currently capped
+    /// @return True if the price is capped, false otherwise
     function isCapped() public view returns (bool) {
         return getRatio() > _getMaxRatio();
     }
