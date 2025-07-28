@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.15;
 
-import "../interfaces/AggregatorV3Interface.sol";
+import { AggregatorV3Interface } from "../interfaces/AggregatorV3Interface.sol";
 
 /**
  * @title PriceCapAdapterBase
