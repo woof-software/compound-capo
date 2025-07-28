@@ -528,4 +528,40 @@ describe("CAPO price feed", function () {
 
         await expect(CapoPriceFeed.connect(newManager).setMinimumSnapshotDelay(7200)).to.be.revertedWithCustomError(CapoPriceFeed, "OnlyManager");
     });
+
+    it("reverts if snapshot is updated too soon after previous snapshot", async () => {
+        const { CapoPriceFeed } = await makeCAPOPriceFeed({
+            priceA: exp(1, 18),
+            priceB: exp(30_000, 18)
+        });
+
+        const currentTimestamp = await ethers.provider.getBlock("latest").then((b) => {
+            if (!b) throw new Error("Block not found");
+            return b.timestamp;
+        });
+
+        await expect(
+            CapoPriceFeed.updateSnapshot({
+                snapshotRatio: exp(31_000, 18),
+                snapshotTimestamp: currentTimestamp - 1800,
+                maxYearlyRatioGrowthPercent: exp(0.01, 4)
+            })
+        )
+            .to.be.revertedWithCustomError(CapoPriceFeed, "InvalidRatioTimestamp")
+            .withArgs(currentTimestamp - 1800);
+
+        await ethers.provider.send("evm_increaseTime", [3600]);
+        await ethers.provider.send("evm_mine", []);
+
+        await expect(
+            CapoPriceFeed.updateSnapshot({
+                snapshotRatio: exp(31_000, 18),
+                snapshotTimestamp: currentTimestamp,
+                maxYearlyRatioGrowthPercent: exp(0.01, 4)
+            })
+        ).to.not.be.reverted;
+
+        expect(await CapoPriceFeed.snapshotRatio()).to.eq(exp(31_000, 18));
+        expect(await CapoPriceFeed.snapshotTimestamp()).to.eq(currentTimestamp);
+    });
 });
