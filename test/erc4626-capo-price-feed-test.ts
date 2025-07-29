@@ -564,4 +564,26 @@ describe("CAPO price feed", function () {
         expect(await CapoPriceFeed.snapshotRatio()).to.eq(exp(31_000, 18));
         expect(await CapoPriceFeed.snapshotTimestamp()).to.eq(currentTimestamp);
     });
+
+    it("reverts if snapshot timestamp is in the future", async () => {
+        const { CapoPriceFeed } = await makeCAPOPriceFeed({
+            priceA: exp(1, 18),
+            priceB: exp(30_000, 18)
+        });
+
+        const currentTimestamp = await ethers.provider.getBlock("latest").then((b) => {
+            if (!b) throw new Error("Block not found");
+            return b.timestamp;
+        });
+
+        await expect(
+            CapoPriceFeed.updateSnapshot({
+                snapshotRatio: exp(31_000, 18),
+                snapshotTimestamp: currentTimestamp + 3600,
+                maxYearlyRatioGrowthPercent: exp(0.01, 4)
+            })
+        )
+            .to.be.revertedWithCustomError(CapoPriceFeed, "InvalidRatioTimestamp")
+            .withArgs(currentTimestamp + 3600);
+    });
 });
