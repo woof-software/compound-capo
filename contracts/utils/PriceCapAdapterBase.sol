@@ -231,21 +231,6 @@ abstract contract PriceCapAdapterBase {
     }
 
     /**
-     * @notice Scales the price based on the rescale factor
-     * @param price Price to scale
-     * @return scaled Price
-     */
-    function _scalePrice(int256 price) internal view returns (int256) {
-        int256 scaledPrice;
-        if (shouldUpscale) {
-            scaledPrice = price * rescaleFactor;
-        } else {
-            scaledPrice = price / rescaleFactor;
-        }
-        return scaledPrice;
-    }
-
-    /**
      * @notice Updates price cap parameters from recent snapshot
      * @param priceCapParams Parameters to set price cap
      */
@@ -287,6 +272,21 @@ abstract contract PriceCapAdapterBase {
             _maxRatioGrowthPerSecond,
             priceCapParams.maxYearlyRatioGrowthPercent
         );
+    }
+
+    /**
+     * @notice Scales the price based on the rescale factor
+     * @param price Price to scale
+     * @return scaled Price
+     */
+    function _scalePrice(int256 price) internal view returns (int256) {
+        int256 scaledPrice;
+        if (shouldUpscale) {
+            scaledPrice = price * rescaleFactor;
+        } else {
+            scaledPrice = price / rescaleFactor;
+        }
+        return scaledPrice;
     }
 
     /// @notice Returns the maximum ratio that can be achieved at the current block.timestamp
