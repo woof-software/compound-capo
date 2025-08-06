@@ -243,6 +243,7 @@ abstract contract PriceCapAdapterBase {
         }
 
         // new snapshot timestamp should be gt than stored one, but not gt than timestamp of the current block
+        //current block timestamp must be at least minimumSnapshotDelay ahead of the stored snapshot timestamp
         if (
             snapshotTimestamp >= priceCapParams.snapshotTimestamp ||
             block.timestamp < snapshotTimestamp + minimumSnapshotDelay ||
