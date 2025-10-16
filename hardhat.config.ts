@@ -68,26 +68,25 @@ const config: HardhatUserConfig = {
                 }
             },
             {
-                version: '0.8.15',
+                version: "0.8.15",
                 settings: {
-                optimizer: (
-                    {
+                    optimizer: {
                         enabled: true,
                         runs: 1,
                         details: {
                             yulDetails: {
-                            optimizerSteps: 'dhfoDgvulfnTUtnIf [xa[r]scLM cCTUtTOntnfDIul Lcul Vcul [j] Tpeul xa[rul] xa[r]cL gvif CTUca[r]LsTOtfDnca[r]Iulc] jmul[jul] VcTOcul jmul'
-                            },
-                        },
-                    }
-                ),
-                outputSelection: {
-                    '*': {
-                    '*': ['evm.deployedBytecode.sourceMap']
+                                optimizerSteps:
+                                    "dhfoDgvulfnTUtnIf [xa[r]scLM cCTUtTOntnfDIul Lcul Vcul [j] Tpeul xa[rul] xa[r]cL gvif CTUca[r]LsTOtfDnca[r]Iulc] jmul[jul] VcTOcul jmul"
+                            }
+                        }
                     },
-                },
-                viaIR: true,
-                },
+                    outputSelection: {
+                        "*": {
+                            "*": ["evm.deployedBytecode.sourceMap"]
+                        }
+                    },
+                    viaIR: true
+                }
             }
         ]
         // overrides: { "contracts/Deployed.sol": { version: "0.8.21" } }
@@ -95,6 +94,7 @@ const config: HardhatUserConfig = {
     // defaultNetwork: "hardhat",
     networks: {
         hardhat: {
+            gasPrice: 100_000_000_000,
             allowUnlimitedContractSize: !optimizerRuns,
             accounts: {
                 accountsBalance: envs.ACCOUNT_BALANCE ?? "10000000000000000000000", // 10000 ETH.
@@ -111,63 +111,63 @@ const config: HardhatUserConfig = {
         ethereum: {
             chainId: 1,
             url: `https://rpc.ankr.com/eth/${ANKR_KEY}`,
-            accounts: [...ethereumMainnetKeys],
+            accounts: [...ethereumMainnetKeys]
         },
         sepolia: {
             chainId: 11155111,
             url: `https://rpc.ankr.com/eth_sepolia/${ANKR_KEY}`,
-            accounts: [...ethereumMainnetKeys],
+            accounts: [...ethereumMainnetKeys]
         },
         ronin: {
             chainId: 2020,
-            url: 'https://ronin.lgns.net/rpc',
-            accounts: [...ethereumMainnetKeys],
+            url: "https://ronin.lgns.net/rpc",
+            accounts: [...ethereumMainnetKeys]
         },
         polygon: {
             chainId: 137,
             url: `https://rpc.ankr.com/polygon/${ANKR_KEY}`,
-            accounts: [...ethereumMainnetKeys],
+            accounts: [...ethereumMainnetKeys]
         },
         optimism: {
             chainId: 10,
             url: `https://rpc.ankr.com/optimism/${ANKR_KEY}`,
-            accounts: [...ethereumMainnetKeys],
+            accounts: [...ethereumMainnetKeys]
         },
         mantle: {
             chainId: 5000,
             url: `https://rpc.ankr.com/mantle/${ANKR_KEY}`,
-            accounts: [...ethereumMainnetKeys],
+            accounts: [...ethereumMainnetKeys]
         },
         unichain: {
             chainId: 130,
             url: `https://multi-boldest-patina.unichain-mainnet.quiknode.pro/${UNICHAIN_QUICKNODE_KEY}`,
-            accounts: [...ethereumMainnetKeys],
+            accounts: [...ethereumMainnetKeys]
         },
         base: {
             chainId: 8453,
             url: `https://rpc.ankr.com/base/${ANKR_KEY}`,
-            accounts: [...ethereumMainnetKeys],
+            accounts: [...ethereumMainnetKeys]
         },
         arbitrum: {
             chainId: 42161,
             url: `https://rpc.ankr.com/arbitrum/${ANKR_KEY}`,
-            accounts: [...ethereumMainnetKeys],
+            accounts: [...ethereumMainnetKeys]
         },
         avalanche: {
             chainId: 43114,
-            url: 'https://api.avax.network/ext/bc/C/rpc',
-            accounts: [...ethereumMainnetKeys],
+            url: "https://api.avax.network/ext/bc/C/rpc",
+            accounts: [...ethereumMainnetKeys]
         },
         fuji: {
             chainId: 43113,
-            url: 'https://api.avax-test.network/ext/bc/C/rpc',
-            accounts: [...ethereumMainnetKeys],
+            url: "https://api.avax-test.network/ext/bc/C/rpc",
+            accounts: [...ethereumMainnetKeys]
         },
         scroll: {
             chainId: 534352,
-            url: 'https://rpc.scroll.io',
-            accounts: [...ethereumMainnetKeys],
-        },
+            url: "https://rpc.scroll.io",
+            accounts: [...ethereumMainnetKeys]
+        }
     },
     etherscan: {
         // To see supported networks and their identifiers for `apiKey`, run `pnpm hardhat verify --list-networks`.
@@ -221,7 +221,7 @@ const config: HardhatUserConfig = {
             except: abiExporterExceptions,
             spacing: 4
         }
-    ],
+    ]
     // exposed: {
     //     imports: true,
     //     initializers: true,

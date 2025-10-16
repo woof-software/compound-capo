@@ -1,0 +1,6 @@
+[
+    "constructor(uint8,uint256)",
+    "function decimals() view returns (uint8)",
+    "function setRate(uint256)",
+    "function tokensPerStEth() view returns (uint256)"
+]

@@ -1,0 +1,6 @@
+[
+    "constructor(uint256 initialPrice)",
+    "function decimals() view returns (uint8)",
+    "function rsETHPrice() view returns (uint256)",
+    "function setRsETHPrice(uint256 newPrice)"
+]

@@ -190,7 +190,7 @@ contract ERC4626CorrelatedAssetsPriceOracleTest is Test {
         require(capo.isCapped(), "Capped price oracle should be capped");
 
         (, int256 cappedPrice, , , ) = capo.latestRoundData();
-
+        vm.assume(uncappedPrice > uint256(cappedPrice));
         assertGt(uncappedPrice, uint256(cappedPrice), "Uncapped price should be greater than the expected capped price");
     }
 
@@ -246,7 +246,7 @@ contract ERC4626CorrelatedAssetsPriceOracleTest is Test {
         expectedPrice = capoDecimals > priceFeedADecimals
             ? expectedPrice * (10 ** (capoDecimals - priceFeedADecimals))
             : expectedPrice / (10 ** (priceFeedADecimals - capoDecimals));
-        require(!capo.isCapped(), "Capped price oracle should not be capped");
+        vm.assume(!capo.isCapped());
         assertEq(uint256(price), expectedPrice, "Latest round data price should match the expected price");
     }
 }

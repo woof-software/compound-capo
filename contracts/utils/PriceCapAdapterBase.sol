@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.15;
 
-import "../interfaces/AggregatorV3Interface.sol";
+import { AggregatorV3Interface } from "../interfaces/AggregatorV3Interface.sol";
 
 /**
  * @title PriceCapAdapterBase
- * @author Compound
+ * @author WOOF!
+ * @custom:security-contact dmitriy@woof.software
  * @notice Price adapter to cap the price of the underlying asset.
  */
 abstract contract PriceCapAdapterBase {
@@ -51,6 +52,9 @@ abstract contract PriceCapAdapterBase {
         }
         _;
     }
+
+    /// @notice Version of the price feed
+    uint256 public constant VERSION = 1;
 
     /// @notice Decimal factor for percentage
     uint256 public constant BASIS_POINTS = 1e4;
@@ -181,7 +185,12 @@ abstract contract PriceCapAdapterBase {
      * @return updatedAt Timestamp when the round was last updated; passed on from underlying price feed
      * @return answeredInRound Round id in which the answer was computed; passed on from underlying price feed
      **/
-    function latestRoundData() external view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) {
+    function latestRoundData()
+        external
+        view
+        virtual
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
+    {
         int256 currentRatio = getRatio();
         int256 _price;
         (roundId, _price, startedAt, updatedAt, answeredInRound) = assetToBaseAggregator.latestRoundData();
@@ -200,18 +209,25 @@ abstract contract PriceCapAdapterBase {
     }
 
     /**
-     * @notice Scales the price based on the rescale factor
-     * @param price Price to scale
-     * @return scaled Price
-     */
-    function _scalePrice(int256 price) internal view returns (int256) {
-        int256 scaledPrice;
-        if (shouldUpscale) {
-            scaledPrice = price * rescaleFactor;
-        } else {
-            scaledPrice = price / rescaleFactor;
-        }
-        return scaledPrice;
+     * @notice Version of the price feed contract
+     * @return The version of the price feed contract
+     **/
+    function version() external pure returns (uint256) {
+        return VERSION;
+    }
+
+    /// @notice Returns the current exchange ratio of lst to the underlying(base) asset
+    /// @return The current exchange ratio of lst to the underlying asset
+    function getRatio() public view virtual returns (int256);
+
+    /// @notice Returns the number of decimals for (lst asset / underlying asset) ratio
+    /// @return The number of decimals for (lst asset / underlying asset) ratio
+    function ratioDecimals() public view virtual returns (uint8);
+
+    /// @notice Returns if the price is currently capped
+    /// @return True if the price is capped, false otherwise
+    function isCapped() public view returns (bool) {
+        return getRatio() > _getMaxRatio();
     }
 
     /**
@@ -227,40 +243,51 @@ abstract contract PriceCapAdapterBase {
         }
 
         // new snapshot timestamp should be gt than stored one, but not gt than timestamp of the current block
-        if (snapshotTimestamp > priceCapParams.snapshotTimestamp || priceCapParams.snapshotTimestamp > block.timestamp - minimumSnapshotDelay) {
+        //current block timestamp must be at least minimumSnapshotDelay ahead of the stored snapshot timestamp
+        if (
+            snapshotTimestamp >= priceCapParams.snapshotTimestamp ||
+            block.timestamp < snapshotTimestamp + minimumSnapshotDelay ||
+            priceCapParams.snapshotTimestamp > block.timestamp
+        ) {
             revert InvalidRatioTimestamp(priceCapParams.snapshotTimestamp);
         }
+
         snapshotRatio = priceCapParams.snapshotRatio;
         snapshotTimestamp = priceCapParams.snapshotTimestamp;
         maxYearlyRatioGrowthPercent = priceCapParams.maxYearlyRatioGrowthPercent;
 
-        maxRatioGrowthPerSecond =
-            (uint256(priceCapParams.snapshotRatio) * priceCapParams.maxYearlyRatioGrowthPercent * GROWTH_RATIO_SCALE) /
+        uint256 _maxRatioGrowthPerSecond = (uint256(priceCapParams.snapshotRatio) * priceCapParams.maxYearlyRatioGrowthPercent * GROWTH_RATIO_SCALE) /
             BASIS_POINTS /
             SECONDS_PER_YEAR;
 
+        maxRatioGrowthPerSecond = _maxRatioGrowthPerSecond;
+
         // if the ratio on the current growth speed can overflow less than in a 3 years, revert
-        if (uint256(snapshotRatio) + uint256(maxRatioGrowthPerSecond * SECONDS_PER_YEAR * 3) / GROWTH_RATIO_SCALE > type(uint128).max) {
+        if (snapshotRatio + uint256(_maxRatioGrowthPerSecond * SECONDS_PER_YEAR * 3) / GROWTH_RATIO_SCALE > type(uint128).max) {
             revert SnapshotCloseToOverflow(priceCapParams.snapshotRatio, priceCapParams.maxYearlyRatioGrowthPercent);
         }
 
         emit NewPriceCapSnapshot(
             priceCapParams.snapshotRatio,
             priceCapParams.snapshotTimestamp,
-            maxRatioGrowthPerSecond,
+            _maxRatioGrowthPerSecond,
             priceCapParams.maxYearlyRatioGrowthPercent
         );
     }
 
-    /// @notice Returns the current exchange ratio of lst to the underlying(base) asset
-    function getRatio() public view virtual returns (int256);
-
-    /// @notice Returns the number of decimals for (lst asset / underlying asset) ratio
-    function ratioDecimals() public view virtual returns (uint8);
-
-    /// @notice Returns if the price is currently capped
-    function isCapped() public view returns (bool) {
-        return getRatio() > _getMaxRatio();
+    /**
+     * @notice Scales the price based on the rescale factor
+     * @param price Price to scale
+     * @return scaled Price
+     */
+    function _scalePrice(int256 price) internal view returns (int256) {
+        int256 scaledPrice;
+        if (shouldUpscale) {
+            scaledPrice = price * rescaleFactor;
+        } else {
+            scaledPrice = price / rescaleFactor;
+        }
+        return scaledPrice;
     }
 
     /// @notice Returns the maximum ratio that can be achieved at the current block.timestamp

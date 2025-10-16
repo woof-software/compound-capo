@@ -12,7 +12,7 @@ dotenv.config();
 
 const jsonPath = process.env.CAPO_ARGS_PATH;
 if (!jsonPath) {
-  throw new Error("Missing CAPO_ARGS_PATH in .env");
+    throw new Error("Missing CAPO_ARGS_PATH in .env");
 }
 
 // Read and parse JSON file
@@ -20,12 +20,12 @@ const rawJson = JSON.parse(readFileSync(join(__dirname, "..", "..", jsonPath), "
 
 // Parse constructorArgs with BigInt conversion
 const constructorArgs = {
-  ...rawJson,
-  priceCapSnapshot: {
-    snapshotRatio: BigInt(rawJson.priceCapSnapshot.snapshotRatio),
-    snapshotTimestamp: BigInt(rawJson.priceCapSnapshot.snapshotTimestamp),
-    maxYearlyRatioGrowthPercent: rawJson.priceCapSnapshot.maxYearlyRatioGrowthPercent
-  }
+    ...rawJson,
+    priceCapSnapshot: {
+        snapshotRatio: BigInt(rawJson.priceCapSnapshot.snapshotRatio),
+        snapshotTimestamp: BigInt(rawJson.priceCapSnapshot.snapshotTimestamp),
+        maxYearlyRatioGrowthPercent: rawJson.priceCapSnapshot.maxYearlyRatioGrowthPercent
+    }
 };
 
 async function main() {
@@ -36,18 +36,14 @@ async function main() {
 
     if (constructorArgs.priceCapSnapshot.snapshotRatio === 0n) {
         console.log("Fetching current ratio from the ratio provider...");
-        const ERC4626 = IERC4626__factory.connect(
-            constructorArgs.ratioProvider,
-            deployer
-        );
+        const ERC4626 = IERC4626__factory.connect(constructorArgs.ratioProvider, deployer);
         const decimals = await ERC4626.decimals();
         const ratio = await ERC4626.convertToAssets(10n ** BigInt(decimals));
         constructorArgs.priceCapSnapshot.snapshotRatio = ratio;
         console.log("Current ratio:", ratio.toString());
     }
 
-
-    if(constructorArgs.priceCapSnapshot.snapshotTimestamp === 0n) {
+    if (constructorArgs.priceCapSnapshot.snapshotTimestamp === 0n) {
         console.log("Fetching current block timestamp for snapshot...");
         const currentBlock = await ethers.provider.getBlock("latest");
         if (!currentBlock) {
@@ -72,6 +68,6 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
-  console.error(error);
-  process.exitCode = 1;
+    console.error(error);
+    process.exitCode = 1;
 });

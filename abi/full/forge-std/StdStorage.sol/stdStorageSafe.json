@@ -1,0 +1,4 @@
+[
+    "event SlotFound(address who, bytes4 fsig, bytes32 keysHash, uint256 slot)",
+    "event WARNING_UninitedSlot(address who, uint256 slot)"
+]
