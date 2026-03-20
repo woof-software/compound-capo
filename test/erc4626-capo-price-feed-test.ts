@@ -12,12 +12,14 @@ export async function makeCAPOPriceFeed({
     priceA,
     priceB,
     decimalsA = 8,
-    decimalsB = 8
+    decimalsB = 8,
+    snapshotTimestamp
 }: {
     priceA: Numeric;
     priceB: Numeric;
     decimalsA?: Numeric;
     decimalsB?: Numeric;
+    snapshotTimestamp?: number;
 }) {
     const [signer] = await ethers.getSigners();
     const SimplePriceFeedFactory = await ethers.getContractFactory("SimplePriceFeed");
@@ -50,7 +52,7 @@ export async function makeCAPOPriceFeed({
         3600,
         {
             snapshotRatio: priceB,
-            snapshotTimestamp: currentTimestamp - 3600,
+            snapshotTimestamp: snapshotTimestamp ?? currentTimestamp - 3600,
             maxYearlyRatioGrowthPercent: exp(0.01, 4)
         }
     );
@@ -530,14 +532,15 @@ describe("CAPO price feed", function () {
     });
 
     it("reverts if snapshot is updated too soon after previous snapshot", async () => {
-        const { CapoPriceFeed } = await makeCAPOPriceFeed({
-            priceA: exp(1, 18),
-            priceB: exp(30_000, 18)
-        });
-
         const currentTimestamp = await ethers.provider.getBlock("latest").then((b) => {
             if (!b) throw new Error("Block not found");
             return b.timestamp;
+        });
+
+        const { CapoPriceFeed } = await makeCAPOPriceFeed({
+            priceA: exp(1, 18),
+            priceB: exp(30_000, 18),
+            snapshotTimestamp: currentTimestamp
         });
 
         await expect(
@@ -553,16 +556,21 @@ describe("CAPO price feed", function () {
         await ethers.provider.send("evm_increaseTime", [3600]);
         await ethers.provider.send("evm_mine", []);
 
+        const newSnapshotTimestamp = await ethers.provider.getBlock("latest").then((b) => {
+            if (!b) throw new Error("Block not found");
+            return b.timestamp;
+        });
+
         await expect(
             CapoPriceFeed.updateSnapshot({
                 snapshotRatio: exp(31_000, 18),
-                snapshotTimestamp: currentTimestamp,
+                snapshotTimestamp: newSnapshotTimestamp,
                 maxYearlyRatioGrowthPercent: exp(0.01, 4)
             })
         ).to.not.be.reverted;
 
         expect(await CapoPriceFeed.snapshotRatio()).to.eq(exp(31_000, 18));
-        expect(await CapoPriceFeed.snapshotTimestamp()).to.eq(currentTimestamp);
+        expect(await CapoPriceFeed.snapshotTimestamp()).to.eq(newSnapshotTimestamp);
     });
 
     it("reverts if snapshot timestamp is in the future", async () => {

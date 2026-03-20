@@ -3,7 +3,7 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
     "files.autoSave": "onFocusChange",
-    "editor.hover.enabled": true,
+    "editor.hover.enabled": "on",
     "solidity.telemetry": false,
     "solidity.formatter": "prettier",
     "[solidity]": {

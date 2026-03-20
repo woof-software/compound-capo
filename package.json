@@ -18,6 +18,7 @@
         "compileh": "pnpm hardhat compile",
         "clean": "bash scripts/commands/clean.sh",
         "size": "pnpm compile:force && pnpm hardhat size-contracts --no-compile",
+        "testf": "pnpm forge test",
         "testh": "pnpm hardhat test",
         "testh:vvv": "pnpm testh --trace --gascost",
         "testh:vvvv": "pnpm testh --fulltrace --gascost",
