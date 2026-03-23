@@ -2,10 +2,15 @@ import { ethers } from "hardhat";
 import { expect } from "chai";
 export type Numeric = number | bigint;
 
-const AddressZero = "0x0000000000000000000000000000000000000000";
+const AddressZero = ethers.ZeroAddress;
 
 export function exp(i: number, d: Numeric = 0, r: Numeric = 6): bigint {
-    return (BigInt(Math.floor(i * 10 ** Number(r))) * 10n ** BigInt(d)) / 10n ** BigInt(r);
+  const sign = i < 0 ? -1n : 1n;
+  const parts = Math.abs(i).toString().split('.');
+  const intPart = parts[0];
+  const fracPart = (parts[1] || '').padEnd(Number(r), '0').slice(0, Number(r));
+  const scaled = BigInt(intPart + fracPart);
+  return sign * (scaled * 10n ** BigInt(d)) / 10n ** BigInt(r);
 }
 
 export async function makeCAPOPriceFeed({

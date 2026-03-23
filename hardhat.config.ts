@@ -24,6 +24,8 @@ dotenv.config();
 import "./scripts/tasks/generate-account";
 
 const envs = process.env;
+if(!envs.FORKING_URL) throw new Error("FORKING_URL in env variables must be set to fork mainnet. Check .env.example for reference.");
+
 const ANKR_KEY = envs.ANKR_KEY ?? "";
 const UNICHAIN_QUICKNODE_KEY = envs.UNICHAIN_QUICKNODE_KEY ?? "";
 
@@ -39,8 +41,6 @@ const isOptionTrue = (option: string | undefined) => ["true", "1"].includes(opti
 const optimizerRuns = isOptionTrue(envs.RUN_OPTIMIZER) || isOptionTrue(envs.REPORT_GAS);
 const optimizerRunNum = envs.OPTIMIZER_RUN_NUM ? +envs.OPTIMIZER_RUN_NUM : 200;
 const viaIR = envs.VIA_IR ? isOptionTrue(envs.VIA_IR) : true;
-
-const enableForking = isOptionTrue(envs.FORKING);
 
 const mochaSerial = isOptionTrue(envs.SERIAL);
 const mochaBail = isOptionTrue(envs.BAIL);
@@ -101,8 +101,8 @@ const config: HardhatUserConfig = {
                 count: envs.NUMBER_OF_ACCOUNTS ? +envs.NUMBER_OF_ACCOUNTS : 20
             },
             forking: {
-                url: envs.FORKING_URL ?? "",
-                enabled: enableForking
+                url: envs.FORKING_URL,
+                enabled: true
             }
             // Uncomment if "Error: cannot estimate gas; transaction may fail or may require manual gas limit...".
             // gas: 3E7,

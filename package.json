@@ -99,7 +99,7 @@
         "npm": "please-use-pnpm",
         "yarn": "please-use-pnpm",
         "pnpm": ">=10.9.0",
-        "node": ">=22.10.0 <23.0.0 || >=23.11.0"
+        "node": ">=22.16.0 <22.17.0"
     },
     "dependencies": {
         "@openzeppelin/contracts": "4.8.3"

@@ -1,6 +1,0 @@
-{
-    "unwantedRecommendations": [
-        // Conflicts with `nomicfoundation.hardhat-solidity`.
-        "JuanBlanco.solidity",
-    ],
-}
