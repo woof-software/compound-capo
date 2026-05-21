@@ -3,18 +3,23 @@ pragma solidity 0.8.15;
 
 import "forge-std/Test.sol";
 import { AggregatorV3Interface } from "../interfaces/AggregatorV3Interface.sol";
-import { WstETHCorrelatedAssetsPriceOracle } from "../WstETHCorrelatedAssetsPriceOracle.sol";
+
+import { RETHCorrelatedAssetsPriceOracle } from "../RETHCorrelatedAssetsPriceOracle.sol";
 import { PriceCapAdapterBase } from "../utils/PriceCapAdapterBase.sol";
 
 import { SimplePriceFeed } from "./SimplePriceFeed.sol";
-import { MockWstETH } from "./MockWstEth.sol";
+import { MockRETH } from "./MockRETH.sol";
 
-contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
+interface ILRTOracleMock {
+    function setPrice(uint256) external;
+}
+
+contract RETHCorrelatedAssetsPriceOracleTest is Test {
     address manager;
 
     SimplePriceFeed baseFeed;
-    MockWstETH wsteth;
-    WstETHCorrelatedAssetsPriceOracle capo;
+    MockRETH rETH;
+    RETHCorrelatedAssetsPriceOracle capo;
 
     function setUp() public {
         manager = makeAddr("manager");
@@ -22,9 +27,9 @@ contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
 
     function _deploy(uint8 baseDec, uint8 outDec, int256 priceA, int256 ratio, uint48 minDelay, uint32 maxGrowth) internal {
         baseFeed = new SimplePriceFeed(priceA, baseDec);
-        wsteth = new MockWstETH(uint256(ratio));
+        rETH = new MockRETH(uint256(ratio));
 
-        vm.warp(block.timestamp + minDelay * 2);
+        vm.warp(block.timestamp + (minDelay * 2));
         vm.roll(block.number + 1);
 
         PriceCapAdapterBase.PriceCapSnapshot memory snap = PriceCapAdapterBase.PriceCapSnapshot({
@@ -33,12 +38,11 @@ contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
             maxYearlyRatioGrowthPercent: maxGrowth
         });
 
-        capo = new WstETHCorrelatedAssetsPriceOracle(
+        capo = new RETHCorrelatedAssetsPriceOracle(
             manager,
             AggregatorV3Interface(address(baseFeed)),
-            address(wsteth),
-            AggregatorV3Interface(address(0)),
-            "wstETH CAPO",
+            address(rETH),
+            "rETH CAPO",
             outDec,
             minDelay,
             snap
@@ -56,12 +60,10 @@ contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
     ) internal pure returns (uint8, uint8, int256, int256, uint48, uint32, uint256) {
         baseDec = uint8(bound(baseDec, 6, 18));
         outDec = uint8(bound(outDec, 6, 18));
-
         priceA = int256(bound(uint256(priceA), 10 ** (baseDec - 2), 100_000 * 10 ** baseDec));
-        ratio = int256(bound(uint256(ratio), 10 ** (18 - 2), 100_000 * 10 ** 18));
-
+        ratio = int256(bound(uint256(ratio), 10 ** 16, 100_000 * 1e18));
         minDelay = uint48(bound(minDelay, 1 hours, 10 days));
-        maxGrowth = uint32(bound(maxGrowth, 100, 2_000_00)); // 1-2000 %
+        maxGrowth = uint32(bound(maxGrowth, 100, 2_000_00)); // 1 %-2000 %
         dt = bound(dt, 60 days, 365 days * 3);
 
         return (baseDec, outDec, priceA, ratio, minDelay, maxGrowth, dt);
@@ -76,7 +78,8 @@ contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
         vm.roll(block.number + 1);
 
         int256 expected = ratio + (ratio * int32(maxGrowth) * int256(dt)) / 365 days / 1e4;
-        wsteth.setRate(uint256(expected));
+
+        rETH.setRETHRate(uint256(expected));
 
         assertEq(capo.getRatio(), expected);
 
@@ -97,15 +100,15 @@ contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
         vm.roll(block.number + 1);
 
         int256 tooHigh = ratio + (ratio * int32(maxGrowth * 2) * int256(dt)) / 365 days / 1e4;
-        wsteth.setRate(uint256(tooHigh));
+        rETH.setRETHRate(uint256(tooHigh));
 
         assertTrue(capo.isCapped());
 
         (, int256 capped, , , ) = capo.latestRoundData();
+
         uint256 raw = (uint256(tooHigh) * uint256(priceA)) / 1e18;
         raw = outDec > baseDec ? raw * 10 ** (outDec - baseDec) : raw / 10 ** (baseDec - outDec);
 
-        vm.assume(raw != uint256(capped));
         assertGt(raw, uint256(capped));
     }
 
@@ -126,7 +129,7 @@ contract WstEthCorrelatedAssetsPeoceOracleTest is Test {
         vm.roll(block.number + 1);
 
         int256 within = ratio + (ratio * int32(maxGrowth / 2) * int256(dt)) / 365 days / 1e4;
-        wsteth.setRate(uint256(within));
+        rETH.setRETHRate(uint256(within));
 
         assertTrue(!capo.isCapped());
         assertEq(capo.getRatio(), within);

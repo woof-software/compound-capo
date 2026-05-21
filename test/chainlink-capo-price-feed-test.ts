@@ -1,8 +1,9 @@
-import { ethers, network } from "hardhat";
+import { ethers } from "hardhat";
 import { expect } from "chai";
+import { ChainlinkCorrelatedAssetsPriceOracle } from "../typechain-types";
 
 type Numeric = number | bigint;
-const ZERO = "0x0000000000000000000000000000000000000000";
+const AddressZero = ethers.ZeroAddress;
 const OUT_DECIMALS = 8;
 
 const CHAINLINK_FEEDS = {
@@ -12,25 +13,30 @@ const CHAINLINK_FEEDS = {
     CBETH_ETH: "0xF017fcB346A1885194689bA23Eff2fE6fA5C483b"
 };
 
-function exp(i: number, d: Numeric = 0, r: Numeric = 6): bigint {
-    return (BigInt(Math.floor(i * 10 ** Number(r))) * 10n ** BigInt(d)) / 10n ** BigInt(r);
+export function exp(i: number, d: Numeric = 0, r: Numeric = 6): bigint {
+  const sign = i < 0 ? -1n : 1n;
+  const parts = Math.abs(i).toString().split('.');
+  const intPart = parts[0];
+  const fracPart = (parts[1] || '').padEnd(Number(r), '0').slice(0, Number(r));
+  const scaled = BigInt(intPart + fracPart);
+  return sign * (scaled * 10n ** BigInt(d)) / 10n ** BigInt(r);
 }
 
-async function makeCAPO({ baseFeed, ratioFeed, outDecimals = OUT_DECIMALS }: { baseFeed: string; ratioFeed: string; outDecimals?: number }) {
+async function makeCAPO({ baseFeed, ratioFeed, outDecimals = OUT_DECIMALS, snapshotTimestamp  }: { baseFeed: string; ratioFeed: string; snapshotTimestamp?: number; outDecimals?: number }) {
     const [manager] = await ethers.getSigners();
     const OracleFactory = await ethers.getContractFactory("ChainlinkCorrelatedAssetsPriceOracle");
 
     const ratioFeedContract = await ethers.getContractAt(
         ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
         ratioFeed
-    );
+    ) as unknown as ChainlinkCorrelatedAssetsPriceOracle;
     const [, currentRatio] = await ratioFeedContract.latestRoundData();
 
-    const now = (await ethers.provider.getBlock("latest"))!.timestamp;
+    const now = (await ethers.provider.getBlock("latest"))?.timestamp ?? 0;
 
     const oracle = await OracleFactory.deploy(manager.address, baseFeed, ratioFeed, "Chainlink CAPO", outDecimals, 3600, {
         snapshotRatio: currentRatio,
-        snapshotTimestamp: now - 3600,
+        snapshotTimestamp: snapshotTimestamp ?? now - 3600,
         maxYearlyRatioGrowthPercent: exp(0.01, 4)
     });
 
@@ -44,12 +50,12 @@ describe("Chainlink CAPO price feed", () => {
         const ratioFeedContract = await ethers.getContractAt(
             ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
             CHAINLINK_FEEDS.STETH_ETH
-        );
+        ) as unknown as ChainlinkCorrelatedAssetsPriceOracle;
         const [, currentRatio] = await ratioFeedContract.latestRoundData();
-        const now = (await ethers.provider.getBlock("latest"))!.timestamp;
+        const now = (await ethers.provider.getBlock("latest"))?.timestamp ?? 0;
 
         await expect(
-            OracleFactory.deploy(ZERO, CHAINLINK_FEEDS.ETH_USD, CHAINLINK_FEEDS.STETH_ETH, "bad", 8, 3600, {
+            OracleFactory.deploy(AddressZero, CHAINLINK_FEEDS.ETH_USD, CHAINLINK_FEEDS.STETH_ETH, "bad", 8, 3600, {
                 snapshotRatio: currentRatio,
                 snapshotTimestamp: now - 3600,
                 maxYearlyRatioGrowthPercent: 1
@@ -78,14 +84,14 @@ describe("Chainlink CAPO price feed", () => {
     });
 
     it("snapshot guards", async () => {
-        const { oracle } = await makeCAPO({ baseFeed: CHAINLINK_FEEDS.ETH_USD, ratioFeed: CHAINLINK_FEEDS.STETH_ETH });
-        const now = (await ethers.provider.getBlock("latest"))!.timestamp;
-
+        const now = (await ethers.provider.getBlock("latest"))?.timestamp ?? 0;
+        const { oracle } = await makeCAPO({ baseFeed: CHAINLINK_FEEDS.ETH_USD, ratioFeed: CHAINLINK_FEEDS.STETH_ETH, snapshotTimestamp: now });
         await expect(oracle.updateSnapshot({ snapshotRatio: 1, snapshotTimestamp: now, maxYearlyRatioGrowthPercent: 0 }))
             .to.be.revertedWithCustomError(oracle, "InvalidRatioTimestamp")
             .withArgs(now);
 
         await ethers.provider.send("evm_increaseTime", [3600]);
+        await ethers.provider.send("evm_mine", []);
         await expect(
             oracle.updateSnapshot({ snapshotRatio: 0, snapshotTimestamp: now, maxYearlyRatioGrowthPercent: 0 })
         ).to.be.revertedWithCustomError(oracle, "SnapshotRatioIsZero");
@@ -121,7 +127,7 @@ describe("Chainlink CAPO price feed", () => {
                 const ethFeed = await ethers.getContractAt(
                     ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
                     CHAINLINK_FEEDS.ETH_USD
-                );
+                ) as unknown as ChainlinkCorrelatedAssetsPriceOracle;
                 const [, ethPrice] = await ethFeed.latestRoundData();
 
                 const minPrice = (ethPrice * 95n) / 100n; // 0.95 - 1.2
@@ -157,7 +163,7 @@ describe("Chainlink CAPO price feed", () => {
             const baseFeedContract = await ethers.getContractAt(
                 ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
                 CHAINLINK_FEEDS.ETH_USD
-            );
+            ) as unknown as ChainlinkCorrelatedAssetsPriceOracle;
             const [baseRoundId, , baseStartedAt, baseUpdatedAt, baseAnsweredInRound] = await baseFeedContract.latestRoundData();
 
             const [roundId, , startedAt, updatedAt, answeredInRound] = await oracle.latestRoundData();
@@ -177,11 +183,11 @@ describe("Chainlink CAPO price feed", () => {
                 const feed = await ethers.getContractAt(
                     ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)", "function decimals() view returns (uint8)"],
                     feedAddress
-                );
+                ) as unknown as ChainlinkCorrelatedAssetsPriceOracle;
                 const [, ratio] = await feed.latestRoundData();
                 const decimals = await feed.decimals();
 
-                const normalizedRatio = decimals === 18 ? ratio : ratio * 10n ** (18n - BigInt(decimals));
+                const normalizedRatio = decimals == 18n ? ratio : ratio * 10n ** (18n - BigInt(decimals));
 
                 if (name === "stETH") {
                     expect(normalizedRatio).to.be.gte(exp(0.9, 18));
@@ -209,11 +215,11 @@ describe("Chainlink CAPO price feed", () => {
             const ethFeed = await ethers.getContractAt(
                 ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
                 CHAINLINK_FEEDS.ETH_USD
-            );
+            ) as unknown as ChainlinkCorrelatedAssetsPriceOracle;
             const stethFeed = await ethers.getContractAt(
                 ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)"],
                 CHAINLINK_FEEDS.STETH_ETH
-            );
+            ) as unknown as ChainlinkCorrelatedAssetsPriceOracle;
 
             const [, ethPrice] = await ethFeed.latestRoundData();
             const [, stethRatio] = await stethFeed.latestRoundData();
@@ -233,11 +239,11 @@ describe("Chainlink CAPO price feed", () => {
             const ethFeed = await ethers.getContractAt(
                 ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)", "function decimals() view returns (uint8)"],
                 CHAINLINK_FEEDS.ETH_USD
-            );
+            ) as unknown as ChainlinkCorrelatedAssetsPriceOracle;
             const stethFeed = await ethers.getContractAt(
                 ["function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)", "function decimals() view returns (uint8)"],
                 CHAINLINK_FEEDS.STETH_ETH
-            );
+            ) as unknown as ChainlinkCorrelatedAssetsPriceOracle;
 
             const [, ethPrice] = await ethFeed.latestRoundData();
             const [, stethRatio] = await stethFeed.latestRoundData();

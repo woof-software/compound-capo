@@ -70,6 +70,10 @@ For assets where both base price and ratio are available via Chainlink feeds. Mu
 
 For LSTs and other tokens that implement the `IRateProvider` interface (e.g., weETH, rswETH). Optionally supports market rate adjustment from Chainlink for underlying asset depegs.
 
+### 6. RETHCorrelatedAssetsPriceOracle
+
+For rETH (Liquid Restaked Token). Gets the rETH exchange rate to ETH directly from rETH.
+
 ---
 
 ## Integration Considerations
@@ -90,6 +94,7 @@ The table below outlines the current and planned markets where CAPO may be integ
 | -------- | ------- | ---------- | ---------------------- | ---- | ------------------------------------ |
 | Mainnet  | cWETHv3 | cbETH      | Liquid Staking Token   | ✅   | ChainlinkCorrelatedAssetsPriceOracle |
 | Mainnet  | cWETHv3 | rsETH      | Liquid Restaking Token | ✅   | RsETHCorrelatedAssetsPriceOracle     |
+| Mainnet  | cWETHv3 | rETH       | Liquid Restaking Token | ✅   | RETHCorrelatedAssetsPriceOracle      |
 | Mainnet  | cWETHv3 | wstETH     | Liquid Staking Token   | ✅   | WstETHCorrelatedAssetsPriceOracle    |
 | Mainnet  | cWETHv3 | rswETH     | Liquid Staking Token   | ✅   | RateBasedCorrelatedAssetsPriceOracle |
 | Mainnet  | cWETHv3 | weETH      | Liquid Restaking Token | ✅   | RateBasedCorrelatedAssetsPriceOracle |
